@@ -1,41 +1,47 @@
 
 # Stupid decision tree :
 # exemple de retour : TRUE if 
-# var "1" >= 18 
+# var "X1" >= 18 
 # or 
-# var"1" <18 et var2>2
+# var"X1" <18 et var X2>2
 # pour l'instant, paramètre inutilisés
-createStupidTreeModel <- function(data,target,impurity,maxDepth){
+createStupidTreeModel <- function(data,target,
+                                  impurityMethod="entropy",
+                                  maxDepth=300,
+                                  minLeafSize = 1,
+                                  impurityThreshold=0.2){
   
   
-  a = list(var=1, cond=">=18", 
-           L=list(var=2,cond=">2",
+  a = list(cond=">=18", var="X1",
+           L=list(cond=">2", var="X2",
                   L=list(V=FALSE),
                   R=list(V=TRUE)), 
            R=list(V=TRUE))
   return(a)
 }
 
-createDecisionTreeModel <- function(data,target,impurity,maxDepth){
-    
-}
-
-# Entropy of q classes
-# data : matrix q * n
-classificationEntropy <- function(data,target){
-  targetCol = data[,target]
-  n = length(data)
-  P = table(targetCol)
-  nodeEntropy = 0
-  for (l in 1:length(P)) {
-    if(P[l]!=0){
-      nodeEntropy = nodeEntropy - (P[l]/n)*log2(P[l]/n)
-    }
-  }
+createDecisionTreeModel <- function(data,target,
+                                    impurityMethod="entropy",
+                                    maxDepth=300,
+                                    minLeafSize = 1,
+                                    impurityThreshold=0.2){
+  variables = names(stupidData)
+  availableVars = variables[variables!=target]
+  config = list(maxDepth=maxDepth,
+                minLeafSize=minLeafSize,
+                impurityThreshold = impurityThreshold, 
+                impurityMethod = impurityMethod, 
+                target=target)
   
-  return(as.vector(nodeEntropy))
+  
+  
+  rootNode = expandNode(node=list(depth=0),
+                        data = data,
+                        availableVars = availableVars , 
+                        config = config)
+  return(rootNode)
+  
 }
-
 
 
 predictFromDecisionTree <-function(decisionTreeModel, item){
@@ -47,10 +53,9 @@ predictFromDecisionTree <-function(decisionTreeModel, item){
     }
     currentDepth = currentDepth + 1
     # application de la condition du noeud :
-    cond = paste("item[var]",node$cond)
-    var = node$var
+    cond = paste("item['",node$var,"']",node$cond,sep="")
     goToRight = eval(parse(text=cond))
-    print(paste("Depth : ",currentDepth,"condition =",var,node$cond," = ",goToRight))
+    print(paste("Depth : ",currentDepth,"condition =",cond," = ",goToRight))
     if(goToRight){
       node = node$R
     } else {
@@ -59,17 +64,80 @@ predictFromDecisionTree <-function(decisionTreeModel, item){
   }
 }
 
-#### Tests ####
+#### Tools functions ####
 
-# stupid tree model + predictFromDecisionTree
-model = createStupidTreeModel(data)
-predictFromDecisionTree(model,c(17,2))
-predictFromDecisionTree(model,c(17,3))
-predictFromDecisionTree(model,c(18,3))
+# Entropy of q classes
+# target : number (of the target column in data) or string
+classificationEntropy <- function(data,target){
+  targetCol = t(as.vector(data[target]))
+  n = length(targetCol)
+  P = table(targetCol)
+  nodeEntropy = 0
+  for (l in 1:length(P)) {
+    if(P[l]!=0){
+      nodeEntropy = nodeEntropy - (P[l]/n)*log2(P[l]/n)
+    }
+  }
+  
+  return(as.vector(nodeEntropy))
+}
 
-# classification entropy
-classificationEntropy(matrix(c(1,1,0,0),nrow=4),target=1) # ==> 1
-classificationEntropy(matrix(c(1,1,1,1),nrow=4),target=1) # ==> 0
-classificationEntropy(matrix(c(1,0,0,0),nrow=4),target=1) # ==> ~ 0.8113
-classificationEntropy(matrix(c(1,1,1,0),nrow=4),target=1) # ==> ~ 0.8113
+# split a dataset in 2 dataset, by a criteria based on a specified split variable
+# return a list(L = left dataset, R = right dataset, cond = condition, var = splitingVariable)
+splitDataset <- function(data,splitVariable,classes){
+  if(is.numeric(data[,splitVariable])){
+    
+    # for now, the split point is very naïve, it's only the mean of the split variable
+    # To improve it, we could use the weighted mean between the class centers
+    splitPoint = mean(as.vector(t(data[splitVariable])))
+    left = data[data[splitVariable]<splitPoint,]
+    right = data[data[splitVariable]>=splitPoint,]
+    cond = paste(">=",splitPoint,sep="")
+    return(list(L=left,R=right,cond=cond,var=splitVariable))
+  } else {
+    modalities = unique(t(as.vector(data[splitVariable])))
+    
+    # For now, we just select a random modality, and split on it
+    # later, we could take in account the target class repartition by modality
+    modality = modalities[sample(1:length(modalities),1)]
+    left = data[data[splitVariable]!=modality,]
+    right = data[data[splitVariable]==modality,]
+    cond= paste("=='",modality,"'",sep="")
+    return(list(L=left,R=right,cond=cond, var=splitVariable))
+  }
+}
+
+expandNode <- function(node,data,availableVars,config){
+  impurity = 1
+  targetColumn = data[,config$target]
+  availableClasses = unique(targetColumn)
+  if(length(availableClasses)==1){
+    # node is pure
+    return(list(V=availableClasses[1]))
+  }
+  
+  if(node$depth<config$maxDepth){
+    split = list()
+    while(impurity>config$impurityThreshold){
+      
+      splitVar = availableVars[sample(1:length(availableVars),1)]
+      split = splitDataset(data,splitVar,c())
+      N = length(data)
+      nL = length(split$L)
+      nR = length(split$R)
+      
+      # total impurity
+      impurityL = classificationEntropy(split$L,config$target)
+      impurityR = classificationEntropy(split$R,config$target)
+      impurity = (nL/N) * impurityL + (nR/N) * impurityR
+    }
+    node$cond = split$cond
+    node$var = split$var
+    node$L = expandNode(list(depth=node$depth+1),data=split$L,availableVars=availableVars,config=config)
+    node$R = expandNode(list(depth=node$depth+1),data=split$R,availableVars=availableVars,config=config)
+    return(node)
+    }
+}
+
+
 
