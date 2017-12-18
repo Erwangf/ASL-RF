@@ -37,7 +37,6 @@ createDecisionTreeModel <- function(data,target,
                                     impurityThreshold=0.2, tailleSubspace = (ncol(data) - 1)){
   variables <- names(data)
   availableVars <- variables[variables != target]
-  availableVars <- availableVars[sample(tailleSubspace)]
   
   config = list(maxDepth=maxDepth,
                 minLeafSize=minLeafSize,
@@ -50,7 +49,8 @@ createDecisionTreeModel <- function(data,target,
   rootNode = expandNode(node=list(depth=0),
                         data = data,
                         availableVars = availableVars , 
-                        config = config)
+                        config = config,
+                        tailleSubspace)
   return(rootNode)
   
 }
@@ -175,7 +175,9 @@ createConfig <- function(data,target,impurityMethod,maxDepth,minLeafSize,impurit
   
 }
 
-expandNode <- function(node,data,availableVars,config){
+expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
+  
+  availableVars <- availableVarsDefault[sample(tailleSubspace)]
   
   targetColumn = data[,config$target]
   availableClasses = unique(targetColumn)
@@ -205,8 +207,8 @@ expandNode <- function(node,data,availableVars,config){
     }
     node$cond = split$cond
     node$var = split$var
-    node$L = expandNode(list(depth=node$depth+1),data=split$L,availableVars=availableVars,config=config)
-    node$R = expandNode(list(depth=node$depth+1),data=split$R,availableVars=availableVars,config=config)
+    node$L = expandNode(list(depth=node$depth+1),data=split$L,availableVarsDefault,config=config,tailleSubspace)
+    node$R = expandNode(list(depth=node$depth+1),data=split$R,availableVarsDefault,config=config,tailleSubspace)
     return(node)
   }
 }
