@@ -2,6 +2,7 @@
 # Author ArctoScience
 # Date : 18/12 
 
+
 # exemple de retour : TRUE if 
 # var "X1" >= 18 
 # or 
