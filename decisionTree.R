@@ -28,7 +28,7 @@ createStupidTreeModel <- function(data,target,
 # impurityMethod="entropy" then gini and third??
 # maxDepth : profondeur max
 # minLeafSize : taille d'une feuille minimum (conditon d'arret)
-# impurityThreshold : valeur d'impureté minimum
+# impurityThreshold : valeur d'impuret? minimum
 createDecisionTreeModel <- function(data,target,
                                     impurityMethod="entropy",
                                     maxDepth=300,
@@ -115,6 +115,7 @@ splitDataset <- function(data,splitVariable,config){
     return(list(L=left,R=right,cond=cond,var=splitVariable,config=config))
     
   } else {
+    
     modalities = config[[splitVariable]]$availableModalities
     
     lowestInpurity = NULL
@@ -183,6 +184,7 @@ expandNode <- function(node,data,availableVars,config){
   }
   
   if(node$depth<config$maxDepth){
+    
     split = list()
     varIndex = 0
     while(varIndex>length(availableVars)){
