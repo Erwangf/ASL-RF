@@ -1,5 +1,11 @@
 source("./decisionTree.R")
 
+#### Tools ####
+errRate = function(pred,truth){
+  c = table(pred,truth)
+  return(1 - sum(diag(c))/sum(c))
+}
+
 
 #### Tests ####
 
@@ -12,6 +18,11 @@ qData = data.frame(V1=c(10,18,13,14,19,22,26,39,22,40),
                    V3=c(0,0,0,0.2,0.8,1,0.4,0.5,0.1,0.1),
                    V4=c("A","B","A","A","B","A","A","B","B","A"))
 
+# qualitative data
+fData = data.frame(V1 = c("A","A","B","B","C","D","E"),
+                   V2 = c("1","2","3","4","3","2","1"),
+                   V3 = c("W","X","W","X","W","W","W"),
+                   V4 = c(T,F,F,F,T,T,F))
 # config
 qConfig = createConfig(qData,"V4",impurityMethod = "entropy",maxDepth = 3,minLeafSize=2,impurityThreshold=0.1)
 
@@ -26,12 +37,27 @@ classificationEntropy(data.frame(X1=c(1,0,0,0)),target="X1") # ==> ~ 0.8113
 classificationEntropy(data.frame(X1=c(1,1,1,0)),target="X1") # ==> ~ 0.8113
 
 # splitting dataset
-splitDataset(stupidData,"X1",classes=c("POSITIVE","NEGATIVE")) # ==> L = 1,2 R = 3, X1 >= 17.3333333
-splitDataset(data.frame(X1=c("A","A","B","C")),"X1",classes=c("POSITIVE","NEGATIVE")) # ==> random separation
-splitDataset(qData,"V3",c("A","B")) # V3>=0.31
-splitDataset(qData,"V2",c("A","B")) # V2>=152.8
-splitDataset(qData,"V4",c("A","B")) # V4=='A'
+splitDataset(stupidData,"X1","X3") # ==> L = 1,2 R = 3, X1 >= 17.3333333
+splitDataset(qData,"V3","V4") # V3>=0.31
+splitDataset(qData,"V2","V4") # V2>=152.8
+splitDataset(fData,"V3","V4")
+splitDataset(fData,"V1","V4")
 
 # Decision tree : quantitative variables, classification
 createDecisionTreeModel(stupidData,"X3")
-createDecisionTreeModel(qData,"V4") # ne marche pas !!
+createDecisionTreeModel(qData,"V4")
+
+qd = createDecisionTreeModel(qData,"V4")
+result = as.vector(apply(qData,1,function(i){predictFromDecisionTree(qd,i)}))
+
+errRate(result,qData$V4)
+
+
+
+# test sur iris
+irisDT = createDecisionTreeModel(iris,"Species")
+
+resultIris = as.vector(apply(iris,1,function(i){predictFromDecisionTree(irisDT,i)}))
+
+errRate(result,iris$Species)
+

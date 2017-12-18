@@ -37,7 +37,8 @@ createDecisionTreeModel <- function(data,target,
                                     impurityThreshold=0.2, tailleSubspace = (ncol(data) - 1)){
   variables <- names(data)
   availableVars <- variables[variables != target]
-  availableVars <- availableVars[sample(tailleSubspace)]
+  # availableVars <- availableVars[sample(tailleSubspace)]
+  print(availableVars)
   
   config = list(maxDepth=maxDepth,
                 minLeafSize=minLeafSize,
@@ -104,10 +105,10 @@ classificationEntropy <- function(data,target){
 #            $availableModalities = list( String ) (only if factor)
 #
 # return a list(L = left dataset, R = right dataset, cond = condition, var = splitingVariable)
-splitDataset <- function(data,splitVariable,config){
-  if(config$variables[[splitVariable]]$type=="numeric"){
-    
-    # classes = config$classes
+splitDataset <- function(data,splitVariable,target){
+  type = class(t(as.vector(data[splitVariable]))[1])
+  
+  if(type=="numeric"){
     
     # for now, the split point is very naive, it's only the mean of the split variable
     # To improve it, we could use the weighted mean between the class centers
@@ -115,11 +116,11 @@ splitDataset <- function(data,splitVariable,config){
     left = data[data[splitVariable]<splitPoint,]
     right = data[data[splitVariable]>=splitPoint,]
     cond = paste(">=",splitPoint,sep="")
-    return(list(L=left,R=right,cond=cond,var=splitVariable,config=config))
+    return(list(L=left,R=right,cond=cond,var=splitVariable))
     
   } else {
     
-    modalities = config[[splitVariable]]$availableModalities
+    modalities = as.vector(t(unique(data[splitVariable])))
     
     lowestInpurity = NULL
     lowestInpurityLeft = NULL
@@ -127,15 +128,16 @@ splitDataset <- function(data,splitVariable,config){
     lowestInpurityCond = NULL
     modIndex = 0
     
-    # trouver la meilleure modalitÃ©
+    # trouver la meilleure modalité
     for(i in 1:length(modalities)) {
       modality = modalities[i]
+      
       left = data[data[splitVariable]!=modality,]
       right = data[data[splitVariable]==modality,]
       cond= paste("=='",modality,"'",sep="")
       
-      # calcul de l'impuretÃ©
-      inpurity = ( nrow(left) * classificationEntropy(left,config$target) + nrow(right) * classificationEntropy(left,config$target) ) / nrow(data)
+      # calcul de l'impureté
+      inpurity = ( nrow(left) * classificationEntropy(left,target) + nrow(right) * classificationEntropy(right,target) ) / nrow(data)
       
       if(is.null(lowestInpurity) || inpurity < lowestInpurity){
         lowestInpurity = inpurity
@@ -152,30 +154,6 @@ splitDataset <- function(data,splitVariable,config){
   }
 }
 
-# Create a config object for the tree
-createConfig <- function(data,target,impurityMethod,maxDepth,minLeafSize,impurityThreshold){
-  config = list(maxDepth=maxDepth,
-                minLeafSize=minLeafSize,
-                impurityThreshold = impurityThreshold, 
-                impurityMethod = impurityMethod, 
-                target=target)
-  variablesNames = names(data)
-  types = sapply(data,class)
-  variables = list()
-  for(v in variablesNames){
-    info = list(type=types[v])
-    if(info$type!="numeric") {
-      info$availableModalities = as.vector(t(unique(data[v])))
-    }
-    variables[[v]] = info
-  }
-  
-  config$variables = variables
-  
-  return(config)
-  
-}
-
 expandNode <- function(node,data,availableVars,config){
   
   targetColumn = data[,config$target]
@@ -186,17 +164,20 @@ expandNode <- function(node,data,availableVars,config){
     return(list(V=availableClasses[1]))
   }
   
-  if(node$depth<config$maxDepth){
-    
-    split = list()
-    varIndex = 0
-    while(varIndex>length(availableVars)){
-      varIndex = varIndex + 1
-      splitVar = availableVars[varIndex]
-      split = splitDataset(data,splitVar,availableClasses)
-      N = nrow(data)
-      nL = nrow(split$L)
-      nR = nrow(split$R)
+ 
+  impurity = 1
+  split = NULL
+  varIndex = 0
+  while(varIndex<length(availableVars)  && impurity > config$impurityThreshold){
+    varIndex = varIndex + 1
+    splitVar = availableVars[varIndex]
+    newSplit = splitDataset(data,splitVar,availableClasses)
+    N = nrow(data)
+    nL = nrow(newSplit$L)
+    nR = nrow(newSplit$R)
+    if(nL != 0 && nR != 0){ 
+      split = newSplit
+      print(splitVar)
       print(paste("nL = ",nL, " nR = ",nR, " N = ", N))
       
       # total impurity
@@ -205,12 +186,20 @@ expandNode <- function(node,data,availableVars,config){
       impurity = (nL/N) * impurityL + (nR/N) * impurityR
       print(paste("impurityLeft = ",impurityL," impurityRight = ",impurityR," totalImpurity = ",impurity))
     }
+  }
+  if(!is.null(split)){
     node$cond = split$cond
     node$var = split$var
     node$L = expandNode(list(depth=node$depth+1),data=split$L,availableVars=availableVars,config=config)
     node$R = expandNode(list(depth=node$depth+1),data=split$R,availableVars=availableVars,config=config)
     return(node)
+  } else {
+    rep <- table(targetColumn)
+    res <- names(targetColumn)[which.max(targetColumn)]
+    return(list(V=res))
   }
+  
+  
 }
 
 
