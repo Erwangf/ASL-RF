@@ -12,6 +12,9 @@ qData = data.frame(V1=c(10,18,13,14,19,22,26,39,22,40),
                    V3=c(0,0,0,0.2,0.8,1,0.4,0.5,0.1,0.1),
                    V4=c("A","B","A","A","B","A","A","B","B","A"))
 
+# config
+qConfig = createConfig(qData,"V4",impurityMethod = "entropy",maxDepth = 3,minLeafSize=2,impurityThreshold=0.1)
+
 # model creation
 stupidModel = createStupidTreeModel(stupidData)
 apply(stupidData,1, function(row){predictFromDecisionTree(stupidModel,row)}) # ==> FALSE TRUE TRUE
