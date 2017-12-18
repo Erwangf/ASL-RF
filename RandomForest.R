@@ -3,35 +3,22 @@
 # Date : 18/12 
 source("decisionTree.R")
 
-Bagging <- function(){
+bagging <- function(data,target,input,numBootstrap = 100, tailleSubspace = floor(sqrt(ncol(data) - 1)), impurityMethod="entropy",maxDepth=300, minLeafSize = 1, impurityThreshold = 0.2){
   
+  predictions <- rep(0,numBootstrap)
+  for (i in 1:numBootstrap) {
+    
+    sampleIDs <- sample(data,nrow(data),replace = TRUE)
+    
+    tempTree <- createDecisionTreeModel(data[sampleIDs,],target,impurityMethod,maxDepth,minLeafSize,impurityThreshold,tailleSubspace)
+    
+    predictions[i] <- predictFromDecisionTree(tempTree,input)
+    
+  }
+
+  votesMajoritaires <- which.max(table(predictions))
+  # Il peut y avoir des ex-aequo, on renvoit donc une liste
+  return(names(votesMajoritaires))
 }
 
-#Fonction générale
-#Input : data :dataframe (todo test dataframe)
-# target variable cible
-# impurityMethod="entropy" then gini and third??
-# maxDepth : profondeur max
-# minLeafSize : taille d'une feuille minimum (conditon d'arret)
-# impurityThreshold : valeur d'impureté minimum
-createDecisionTreeModel <- function(data,target,
-                                    impurityMethod="entropy",
-                                    maxDepth=300,
-                                    minLeafSize = 1,
-                                    impurityThreshold=0.2){
-  variables = names(data)
-  availableVars = variables[variables!=target]
-  config = list(maxDepth=maxDepth,
-                minLeafSize=minLeafSize,
-                impurityThreshold = impurityThreshold, 
-                impurityMethod = impurityMethod, 
-                target=target)
-  
-  
-  
-  rootNode = expandNode(node=list(depth=0),
-                        data = data,
-                        availableVars = availableVars , 
-                        config = config)
-  return(rootNode)
-}
+
