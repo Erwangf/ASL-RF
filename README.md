@@ -2,8 +2,9 @@
 Advanved Supervised Learning : Random Forest Project
 
 ## Authors
-Erwan Giry-Fouquet
 Antoine Gourru
+Erwan Giry-Fouquet
+
 
 Université Lyon 2, M2 DM
 
