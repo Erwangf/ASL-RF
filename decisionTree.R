@@ -17,8 +17,8 @@ createStupidTreeModel <- function(data,target,
   
   a = list(cond = ">=18", var = "X1",
            L = list(cond = ">2", var = "X2",
-                  L = list(V = FALSE),
-                  R = list(V = TRUE)), 
+                    L = list(V = FALSE),
+                    R = list(V = TRUE)), 
            R = list(V = TRUE))
   return(a)
 }
@@ -34,9 +34,11 @@ createDecisionTreeModel <- function(data,target,
                                     impurityMethod="entropy",
                                     maxDepth=300,
                                     minLeafSize = 1,
-                                    impurityThreshold=0.2){
-  variables = names(data)
-  availableVars = variables[variables!=target]
+                                    impurityThreshold=0.2, tailleSubspace = (ncol(data) - 1)){
+  variables <- names(data)
+  availableVars <- variables[variables != target]
+  availableVars <- availableVars[sample(tailleSubspace)]
+  
   config = list(maxDepth=maxDepth,
                 minLeafSize=minLeafSize,
                 impurityThreshold = impurityThreshold, 
@@ -144,7 +146,7 @@ splitDataset <- function(data,splitVariable,config){
     
     
     cond= paste("=='",modalities[modIndex],"'",sep="")
-      
+    
     return(list(L=lowestInpurityLeft,R=lowestInpurityRight,cond=cond, var=splitVariable))
   }
 }
@@ -168,7 +170,7 @@ createConfig <- function(data,target,impurityMethod,maxDepth,minLeafSize,impurit
   }
   
   config$variables = variables
-
+  
   return(config)
   
 }
@@ -177,7 +179,7 @@ expandNode <- function(node,data,availableVars,config){
   
   targetColumn = data[,config$target]
   availableClasses = unique(targetColumn)
-
+  
   # check if the node is pure
   if(length(availableClasses)==1){
     return(list(V=availableClasses[1]))
@@ -206,7 +208,7 @@ expandNode <- function(node,data,availableVars,config){
     node$L = expandNode(list(depth=node$depth+1),data=split$L,availableVars=availableVars,config=config)
     node$R = expandNode(list(depth=node$depth+1),data=split$R,availableVars=availableVars,config=config)
     return(node)
-    }
+  }
 }
 
 
