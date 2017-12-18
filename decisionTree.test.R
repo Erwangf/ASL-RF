@@ -31,4 +31,4 @@ splitDataset(qData,"V4",c("A","B")) # V4=='A'
 
 # Decision tree : quantitative variables, classification
 createDecisionTreeModel(stupidData,"X3")
-createDecisionTreeModel(qData,"V4")
+createDecisionTreeModel(qData,"V4") # ne marche pas !!

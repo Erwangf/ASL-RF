@@ -4,7 +4,7 @@
 # var "X1" >= 18 
 # or 
 # var"X1" <18 et var X2>2
-# pour l'instant, paramètre inutilisés
+# pour l'instant, param?tre inutilis?s
 createStupidTreeModel <- function(data,target,
                                   impurityMethod="entropy",
                                   maxDepth=300,
@@ -25,7 +25,7 @@ createDecisionTreeModel <- function(data,target,
                                     maxDepth=300,
                                     minLeafSize = 1,
                                     impurityThreshold=0.2){
-  variables = names(stupidData)
+  variables = names(data)
   availableVars = variables[variables!=target]
   config = list(maxDepth=maxDepth,
                 minLeafSize=minLeafSize,
@@ -87,7 +87,7 @@ classificationEntropy <- function(data,target){
 splitDataset <- function(data,splitVariable,classes){
   if(is.numeric(data[,splitVariable])){
     
-    # for now, the split point is very naïve, it's only the mean of the split variable
+    # for now, the split point is very na?ve, it's only the mean of the split variable
     # To improve it, we could use the weighted mean between the class centers
     splitPoint = mean(as.vector(t(data[splitVariable])))
     left = data[data[splitVariable]<splitPoint,]
@@ -118,18 +118,21 @@ expandNode <- function(node,data,availableVars,config){
   
   if(node$depth<config$maxDepth){
     split = list()
-    while(impurity>config$impurityThreshold){
-      
-      splitVar = availableVars[sample(1:length(availableVars),1)]
-      split = splitDataset(data,splitVar,c())
-      N = length(data)
-      nL = length(split$L)
-      nR = length(split$R)
+    varIndex = 0
+    while(varIndex>length(availableVars)){
+      varIndex = varIndex + 1
+      splitVar = availableVars[varIndex]
+      split = splitDataset(data,splitVar,availableClasses)
+      N = nrow(data)
+      nL = nrow(split$L)
+      nR = nrow(split$R)
+      print(paste("nL = ",nL, " nR = ",nR, " N = ",N))
       
       # total impurity
       impurityL = classificationEntropy(split$L,config$target)
       impurityR = classificationEntropy(split$R,config$target)
       impurity = (nL/N) * impurityL + (nR/N) * impurityR
+      print(paste("impurityLeft = ",impurityL," impurityRight = ",impurityR," totalImpurity = ",impurity))
     }
     node$cond = split$cond
     node$var = split$var
