@@ -83,36 +83,93 @@ classificationEntropy <- function(data,target){
 }
 
 # split a dataset in 2 dataset, by a criteria based on a specified split variable
+# use a config object :
+# config
+#   $target
+#   $variables : list
+#        $varExemple : list
+#            $type = numeric / factor
+#            $availableModalities = list( String ) (only if factor)
+#
 # return a list(L = left dataset, R = right dataset, cond = condition, var = splitingVariable)
-splitDataset <- function(data,splitVariable,classes){
-  if(is.numeric(data[,splitVariable])){
+splitDataset <- function(data,splitVariable,config){
+  if(config$variables[[splitVariable]]$type=="numeric"){
     
-    # for now, the split point is very na?ve, it's only the mean of the split variable
+    # classes = config$classes
+    
+    # for now, the split point is very naive, it's only the mean of the split variable
     # To improve it, we could use the weighted mean between the class centers
     splitPoint = mean(as.vector(t(data[splitVariable])))
     left = data[data[splitVariable]<splitPoint,]
     right = data[data[splitVariable]>=splitPoint,]
     cond = paste(">=",splitPoint,sep="")
-    return(list(L=left,R=right,cond=cond,var=splitVariable))
-  } else {
-    modalities = unique(t(as.vector(data[splitVariable])))
+    return(list(L=left,R=right,cond=cond,var=splitVariable,config=config))
     
-    # For now, we just select a random modality, and split on it
-    # later, we could take in account the target class repartition by modality
-    modality = modalities[sample(1:length(modalities),1)]
-    left = data[data[splitVariable]!=modality,]
-    right = data[data[splitVariable]==modality,]
-    cond= paste("=='",modality,"'",sep="")
-    return(list(L=left,R=right,cond=cond, var=splitVariable))
+  } else {
+    modalities = config[[splitVariable]]$availableModalities
+    
+    lowestInpurity = NULL
+    lowestInpurityLeft = NULL
+    lowestInpurityRight = NULL
+    lowestInpurityCond = NULL
+    modIndex = 0
+    
+    # trouver la meilleure modalité
+    for(i in 1:length(modalities)) {
+      modality = modalities[i]
+      left = data[data[splitVariable]!=modality,]
+      right = data[data[splitVariable]==modality,]
+      cond= paste("=='",modality,"'",sep="")
+      
+      # calcul de l'impureté
+      inpurity = ( nrow(left) * classificationEntropy(left,config$target) + nrow(right) * classificationEntropy(left,config$target) ) / nrow(data)
+      
+      if(is.null(lowestInpurity) || inpurity < lowestInpurity){
+        lowestInpurity = inpurity
+        lowestInpurityLeft = left
+        lowestInpurityRight = right
+        modIndex = i
+      }
+    }
+    
+    
+    cond= paste("=='",modalities[modIndex],"'",sep="")
+      
+    return(list(L=lowestInpurityLeft,R=lowestInpurityRight,cond=cond, var=splitVariable))
   }
 }
 
+# Create a config object for the tree
+createConfig <- function(data,target,impurityMethod,maxDepth,minLeafSize,impurityThreshold){
+  config = list(maxDepth=maxDepth,
+                minLeafSize=minLeafSize,
+                impurityThreshold = impurityThreshold, 
+                impurityMethod = impurityMethod, 
+                target=target)
+  variablesNames = names(data)
+  types = sapply(data,class)
+  variables = list()
+  for(v in variablesNames){
+    info = list(type=types[v])
+    if(info$type!="numeric") {
+      info$availableModalities = as.vector(t(unique(data[v])))
+    }
+    variables[[v]] = info
+  }
+  
+  config$variables = variables
+
+  return(config)
+  
+}
+
 expandNode <- function(node,data,availableVars,config){
-  impurity = 1
+  
   targetColumn = data[,config$target]
   availableClasses = unique(targetColumn)
+
+  # check if the node is pure
   if(length(availableClasses)==1){
-    # node is pure
     return(list(V=availableClasses[1]))
   }
   
@@ -126,7 +183,7 @@ expandNode <- function(node,data,availableVars,config){
       N = nrow(data)
       nL = nrow(split$L)
       nR = nrow(split$R)
-      print(paste("nL = ",nL, " nR = ",nR, " N = ",N))
+      print(paste("nL = ",nL, " nR = ",nR, " N = ", N))
       
       # total impurity
       impurityL = classificationEntropy(split$L,config$target)
