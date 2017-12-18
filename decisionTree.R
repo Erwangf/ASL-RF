@@ -1,5 +1,7 @@
+## FIle : Stupid decision tree :
+# Author ArctoScience
+# Date : 18/12 
 
-# Stupid decision tree :
 # exemple de retour : TRUE if 
 # var "X1" >= 18 
 # or 
@@ -12,14 +14,21 @@ createStupidTreeModel <- function(data,target,
                                   impurityThreshold=0.2){
   
   
-  a = list(cond=">=18", var="X1",
-           L=list(cond=">2", var="X2",
-                  L=list(V=FALSE),
-                  R=list(V=TRUE)), 
-           R=list(V=TRUE))
+  a = list(cond = ">=18", var = "X1",
+           L = list(cond = ">2", var = "X2",
+                  L = list(V = FALSE),
+                  R = list(V = TRUE)), 
+           R = list(V = TRUE))
   return(a)
 }
 
+#Fonction générale
+#Input : data :dataframe (todo test dataframe)
+# target variable cible
+# impurityMethod="entropy" then gini and third??
+# maxDepth : profondeur max
+# minLeafSize : taille d'une feuille minimum (conditon d'arret)
+# impurityThreshold : valeur d'impureté minimum
 createDecisionTreeModel <- function(data,target,
                                     impurityMethod="entropy",
                                     maxDepth=300,
