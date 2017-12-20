@@ -94,7 +94,7 @@ classificationEntropy <- function(data,target){
 }
 
 
-splitNumVar <- function(data,splitVariable,target){
+splitNumVar <- function(data,splitVariable,target,minLeafSize=1){
   # for now, the split point is very naive, it's only the mean of the split variable
   # To improve it, we could use the weighted mean between the class centers
   splitPoint = mean(as.vector(t(data[splitVariable])))
@@ -102,7 +102,7 @@ splitNumVar <- function(data,splitVariable,target){
   return(splitPoint)
 }
 
-splitFacVar <- function(data,splitVariable,target){
+splitFacVar <- function(data,splitVariable,target,minLeafSize=1){
   
   modalities = as.vector(t(unique(data[splitVariable])))
   
@@ -110,7 +110,7 @@ splitFacVar <- function(data,splitVariable,target){
   lowestInpurityLeft = NULL
   lowestInpurityRight = NULL
   lowestInpurityCond = NULL
-  modIndex = 0
+  modIndex = 1
   
   # trouver la meilleure modalité
   for(i in 1:length(modalities)) {
@@ -123,7 +123,7 @@ splitFacVar <- function(data,splitVariable,target){
     # calcul de l'impureté
     inpurity = ( nrow(left) * classificationEntropy(left,target) + nrow(right) * classificationEntropy(right,target) ) / nrow(data)
     
-    if(is.null(lowestInpurity) || inpurity < lowestInpurity){
+    if((is.null(lowestInpurity) || inpurity < lowestInpurity) && nrow(left) >= minLeafSize && nrow(right) >= minLeafSize) {
       lowestInpurity = inpurity
       lowestInpurityLeft = left
       lowestInpurityRight = right
@@ -238,12 +238,12 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
     
     varType = class(as.vector(t(data[splitVar]))[1])
     if(varType == "numeric"){
-      splitPosition = splitNumVar(data,splitVar,config$target)
+      splitPosition = splitNumVar(data,splitVar,config$target,config$minLeafSize)
       newSplit$cond = paste(">=",splitPosition)
       newSplit$L = data[data[splitVar]<splitPosition,]
       newSplit$R = data[data[splitVar]>=splitPosition,]
     } else {
-      splitMod = splitFacVar(data,splitVar,config$target)
+      splitMod = splitFacVar(data,splitVar,config$target,config$minLeafSize)
       newSplit$cond = paste("==",splitMod)
       newSplit$L = data[data[splitVar] != splitMod,]
       newSplit$R = data[data[splitVar] == splitMod,]
@@ -263,7 +263,7 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
       impurityR = classificationEntropy(newSplit$R,config$target)
       newImpurity = (nL/N) * impurityL + (nR/N) * impurityR
       print(newImpurity)
-      if(newImpurity<impurity){
+      if(newImpurity<impurity && nL>=config$minLeafSize && nR >= config$minLeafSize ){
         split = newSplit
         impurity = newImpurity
       }
@@ -277,8 +277,9 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
     node$R = expandNode(list(depth=node$depth+1),data=split$R,availableVarsDefault,config=config,tailleSubspace)
     return(node)
   } else {
-    rep <- table(targetColumn)
-    res <- names(targetColumn)[which.max(targetColumn)]
+    
+    res <- names(which.max(table(targetColumn)))
+    
     return(list(V=res))
   }
   
