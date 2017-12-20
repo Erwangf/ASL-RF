@@ -57,9 +57,10 @@ errRate(result,qData$V4)
 # test sur iris
 plot(iris$Petal.Length, iris$Petal.Width, pch=21, bg=c("red","green3","blue")[unclass(iris$Species)], main="Iris Data")
 
-irisDT = createDecisionTreeModel(iris,"Species",impurityThreshold = 0.1,maxDepth = 10,minLeafSize = 30)
-resultIris = as.vector(apply(iris,1,function(i){predictFromDecisionTree(irisDT,i)}))
-errRate(resultIris,iris$Species)
+irisDT = createDecisionTreeModel(iris,"Species",impurityThreshold = 0.1,maxDepth = 2,minLeafSize = 5)
+resultIris = t(apply(iris,1,function(i){predictFromDecisionTree(irisDT,i)}))
+prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
+errRate(prediction,iris$Species)
 
 
 

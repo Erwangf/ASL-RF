@@ -37,11 +37,13 @@ createDecisionTreeModel <- function(data,target,
                                     impurityThreshold=0.2, tailleSubspace = (ncol(data)-1)){
   variables <- names(data)
   availableVars <- variables[variables != target]
+  targetClasses <- as.vector(t(unique(data[target])))
   config = list(maxDepth=maxDepth,
                 minLeafSize=minLeafSize,
                 impurityThreshold = impurityThreshold, 
                 impurityMethod = impurityMethod, 
-                target=target)
+                target=target,
+                targetClasses = targetClasses)
   
   
   
@@ -130,73 +132,18 @@ splitFacVar <- function(data,splitVariable,target,minLeafSize=1){
       modIndex = i
     }
   }
-  
-  
-  
-  
   return(modalities[modIndex])
 }
 
-
-# split a dataset in 2 dataset, by a criteria based on a specified split variable
-# use a config object :
-# config
-#   $target
-#   $variables : list
-#        $varExemple : list
-#            $type = numeric / factor
-#            $availableModalities = list( String ) (only if factor)
-#
-# return a list(L = left dataset, R = right dataset, cond = condition, var = splitingVariable)
-splitDataset <- function(data,splitVariable,target){
-  type = class(t(as.vector(data[splitVariable]))[1])
+leafValue <- function(data,target,classes){
+  # currently, if use a (not always efficient) custom table + names
+  # res <- names(which.max(table(data[target])))
+  # return(res)
   
-  if(type=="numeric"){
-    
-    # for now, the split point is very naive, it's only the mean of the split variable
-    # To improve it, we could use the weighted mean between the class centers
-    splitPoint = mean(as.vector(t(data[splitVariable])))
-    left = data[data[splitVariable]<splitPoint,]
-    right = data[data[splitVariable]>=splitPoint,]
-    cond = paste(">=",splitPoint,sep="")
-    return(list(L=left,R=right,cond=cond,var=splitVariable))
-    
-  } else {
-    
-    modalities = as.vector(t(unique(data[splitVariable])))
-    
-    lowestInpurity = NULL
-    lowestInpurityLeft = NULL
-    lowestInpurityRight = NULL
-    lowestInpurityCond = NULL
-    modIndex = 0
-    
-    # trouver la meilleure modalité
-    for(i in 1:length(modalities)) {
-      modality = modalities[i]
-      
-      left = data[data[splitVariable]!=modality,]
-      right = data[data[splitVariable]==modality,]
-      cond= paste("=='",modality,"'",sep="")
-      
-      # calcul de l'impureté
-      inpurity = ( nrow(left) * classificationEntropy(left,target) + nrow(right) * classificationEntropy(right,target) ) / nrow(data)
-      
-      if(is.null(lowestInpurity) || inpurity < lowestInpurity){
-        lowestInpurity = inpurity
-        lowestInpurityLeft = left
-        lowestInpurityRight = right
-        modIndex = i
-      }
-    }
-    
-    
-    cond= paste("=='",modalities[modIndex],"'",sep="")
-    
-    return(list(L=lowestInpurityLeft,R=lowestInpurityRight,cond=cond, var=splitVariable))
-  }
+  proba = sapply(classes,function(e){mean(data[target]==e)})
+  
+  return(proba)
 }
-
 
 
 expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
@@ -205,8 +152,7 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
   # depth control
   if(node$depth>=config$maxDepth){
     print("Maximal Depth reached")
-    res <- names(which.max(table(targetColumn)))
-    return(list(V=res))
+    return(list(V=leafValue(data,config$target,config$targetClasses)))
   }
   
   availableVars <- availableVarsDefault[sample(tailleSubspace)]
@@ -216,19 +162,16 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
   
   # check if the node is pure
   if(length(availableClasses)==1){
-    return(list(V=availableClasses[1]))
+    return(list(V=leafValue(data,config$target,config$targetClasses)))
   }
-  currentEntropy = classificationEntropy(data,config$target)
+  
+  impurity = classificationEntropy(data,config$target)
   # impurity threshold
-  if(currentEntropy<config$impurityThreshold){
+  if(impurity<config$impurityThreshold){
     print(paste("Current Entropy = ",currentEntropy," => no expansion"))
-    res <- names(which.max(table(targetColumn)))
-    return(list(V=res))
+    return(list(V=leafValue(data,config$target,config$targetClasses)))
   }
   
-  
- 
-  impurity = 1
   split = NULL
   varIndex = 0
   while(varIndex<length(availableVars)){
@@ -278,9 +221,8 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
     return(node)
   } else {
     
-    res <- names(which.max(table(targetColumn)))
+    return(list(V=leafValue(data,config$target,config$targetClasses)))
     
-    return(list(V=res))
   }
   
   
