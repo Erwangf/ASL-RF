@@ -37,11 +37,11 @@ classificationEntropy(data.frame(X1=c(1,0,0,0)),target="X1") # ==> ~ 0.8113
 classificationEntropy(data.frame(X1=c(1,1,1,0)),target="X1") # ==> ~ 0.8113
 
 # splitting dataset
-splitDataset(stupidData,"X1","X3") # ==> L = 1,2 R = 3, X1 >= 17.3333333
-splitDataset(qData,"V3","V4") # V3>=0.31
-splitDataset(qData,"V2","V4") # V2>=152.8
-splitDataset(fData,"V3","V4")
-splitDataset(fData,"V1","V4")
+splitNumVar(stupidData,"X1","X3") #  17.3333333
+splitNumVar(qData,"V3","V4") # 0.31
+splitNumVar(qData,"V2","V4") # 152.8
+splitFacVar(fData,"V3","V4") # W
+splitFacVar(fData,"V1","V4") # B
 
 # Decision tree : quantitative variables, classification
 createDecisionTreeModel(stupidData,"X3")
@@ -55,9 +55,20 @@ errRate(result,qData$V4)
 
 
 # test sur iris
-irisDT = createDecisionTreeModel(iris,"Species")
+plot(iris$Petal.Length, iris$Petal.Width, pch=21, bg=c("red","green3","blue")[unclass(iris$Species)], main="Iris Data")
 
+irisDT = createDecisionTreeModel(iris,"Species",impurityThreshold = 0.1,maxDepth = 2)
 resultIris = as.vector(apply(iris,1,function(i){predictFromDecisionTree(irisDT,i)}))
+errRate(resultIris,iris$Species)
 
-errRate(result,iris$Species)
+
+
+# comparing with rpart
+library(rpart)
+library(rpart.plot)
+dt = rpart(data = iris,formula = Species ~.)
+rpart.plot(dt)
+
+errRate(apply(predict(dt,iris),1,function(l){names(l[which.max(l)])}),iris$Species)
+
 

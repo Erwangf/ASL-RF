@@ -34,7 +34,7 @@ createDecisionTreeModel <- function(data,target,
                                     impurityMethod="entropy",
                                     maxDepth=300,
                                     minLeafSize = 1,
-                                    impurityThreshold=0.2, tailleSubspace = (ncol(data) - 1)){
+                                    impurityThreshold=0.2, tailleSubspace = (ncol(data)-1)){
   variables <- names(data)
   availableVars <- variables[variables != target]
   config = list(maxDepth=maxDepth,
@@ -92,6 +92,51 @@ classificationEntropy <- function(data,target){
   
   return(as.vector(nodeEntropy))
 }
+
+
+splitNumVar <- function(data,splitVariable,target){
+  # for now, the split point is very naive, it's only the mean of the split variable
+  # To improve it, we could use the weighted mean between the class centers
+  splitPoint = mean(as.vector(t(data[splitVariable])))
+  
+  return(splitPoint)
+}
+
+splitFacVar <- function(data,splitVariable,target){
+  
+  modalities = as.vector(t(unique(data[splitVariable])))
+  
+  lowestInpurity = NULL
+  lowestInpurityLeft = NULL
+  lowestInpurityRight = NULL
+  lowestInpurityCond = NULL
+  modIndex = 0
+  
+  # trouver la meilleure modalité
+  for(i in 1:length(modalities)) {
+    modality = modalities[i]
+    
+    left = data[data[splitVariable]!=modality,]
+    right = data[data[splitVariable]==modality,]
+    cond= paste("=='",modality,"'",sep="")
+    
+    # calcul de l'impureté
+    inpurity = ( nrow(left) * classificationEntropy(left,target) + nrow(right) * classificationEntropy(right,target) ) / nrow(data)
+    
+    if(is.null(lowestInpurity) || inpurity < lowestInpurity){
+      lowestInpurity = inpurity
+      lowestInpurityLeft = left
+      lowestInpurityRight = right
+      modIndex = i
+    }
+  }
+  
+  
+  
+  
+  return(modalities[modIndex])
+}
+
 
 # split a dataset in 2 dataset, by a criteria based on a specified split variable
 # use a config object :
@@ -152,43 +197,77 @@ splitDataset <- function(data,splitVariable,target){
   }
 }
 
-# <<<<<<< HEAD
-# expandNode <- function(node,data,availableVars,config){
-# =======
 
 
 expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
+  print(paste("Depth = ",node$depth, "/",config$maxDepth))
+  targetColumn = data[,config$target]
+  # depth control
+  if(node$depth>=config$maxDepth){
+    print("Maximal Depth reached")
+    res <- names(which.max(table(targetColumn)))
+    return(list(V=res))
+  }
+  
   availableVars <- availableVarsDefault[sample(tailleSubspace)]
 
-  targetColumn = data[,config$target]
+  
   availableClasses = unique(targetColumn)
   
   # check if the node is pure
   if(length(availableClasses)==1){
     return(list(V=availableClasses[1]))
   }
+  currentEntropy = classificationEntropy(data,config$target)
+  # impurity threshold
+  if(currentEntropy<config$impurityThreshold){
+    print(paste("Current Entropy = ",currentEntropy," => no expansion"))
+    res <- names(which.max(table(targetColumn)))
+    return(list(V=res))
+  }
+  
   
  
   impurity = 1
   split = NULL
   varIndex = 0
-  while(varIndex<length(availableVars)  && impurity > config$impurityThreshold){
+  while(varIndex<length(availableVars)){
     varIndex = varIndex + 1
     splitVar = availableVars[varIndex]
-    newSplit = splitDataset(data,splitVar,availableClasses)
+    newSplit = list(var=splitVar)
+    
+    varType = class(as.vector(t(data[splitVar]))[1])
+    if(varType == "numeric"){
+      splitPosition = splitNumVar(data,splitVar,config$target)
+      newSplit$cond = paste(">=",splitPosition)
+      newSplit$L = data[data[splitVar]<splitPosition,]
+      newSplit$R = data[data[splitVar]>=splitPosition,]
+    } else {
+      splitMod = splitFacVar(data,splitVar,config$target)
+      newSplit$cond = paste("==",splitMod)
+      newSplit$L = data[data[splitVar] != splitMod,]
+      newSplit$R = data[data[splitVar] == splitMod,]
+    }
+    
     N = nrow(data)
     nL = nrow(newSplit$L)
     nR = nrow(newSplit$R)
+    
     if(nL != 0 && nR != 0){ 
-      split = newSplit
+      
       print(splitVar)
       print(paste("nL = ",nL, " nR = ",nR, " N = ", N))
       
       # total impurity
-      impurityL = classificationEntropy(split$L,config$target)
-      impurityR = classificationEntropy(split$R,config$target)
-      impurity = (nL/N) * impurityL + (nR/N) * impurityR
-      print(paste("impurityLeft = ",impurityL," impurityRight = ",impurityR," totalImpurity = ",impurity))
+      impurityL = classificationEntropy(newSplit$L,config$target)
+      impurityR = classificationEntropy(newSplit$R,config$target)
+      newImpurity = (nL/N) * impurityL + (nR/N) * impurityR
+      print(newImpurity)
+      if(newImpurity<impurity){
+        split = newSplit
+        impurity = newImpurity
+      }
+     
     }
   }
   if(!is.null(split)){
