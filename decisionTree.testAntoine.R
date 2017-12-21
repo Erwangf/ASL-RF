@@ -6,54 +6,8 @@ errRate = function(pred,truth){
   c = table(pred,truth)
   return(1 - sum(diag(c))/sum(c))
 }
-# 
-# 
-# #### Tests ####
-# 
-# # stupid tree model + predictFromDecisionTree
-# stupidData = data.frame(X1=c(17,17,18),X2=c(2,3,3),X3=c(FALSE,TRUE,TRUE))
-# 
-# # quantitative data
-# qData = data.frame(V1=c(10,18,13,14,19,22,26,39,22,40), 
-#                    V2=c(100,165,140,168,199,145,155,111,194,151),
-#                    V3=c(0,0,0,0.2,0.8,1,0.4,0.5,0.1,0.1),
-#                    V4=c("A","B","A","A","B","A","A","B","B","A"))
-# 
-# # qualitative data
-# fData = data.frame(V1 = c("A","A","B","B","C","D","E"),
-#                    V2 = c("1","2","3","4","3","2","1"),
-#                    V3 = c("W","X","W","X","W","W","W"),
-#                    V4 = c(T,F,F,F,T,T,F))
-# # config
-# qConfig = createConfig(qData,"V4",impurityMethod = "entropy",maxDepth = 3,minLeafSize=2,impurityThreshold=0.1)
-# 
-# # model creation
-# stupidModel = createStupidTreeModel(stupidData)
-# apply(stupidData,1, function(row){predictFromDecisionTree(stupidModel,row)}) # ==> FALSE TRUE TRUE
-# 
-# # classification entropy
-# classificationEntropy(data.frame(X1=c(1,1,0,0)),target="X1") # ==> 1
-# classificationEntropy(data.frame(X1=c(1,1,1,1)),target="X1") # ==> 0
-# classificationEntropy(data.frame(X1=c(1,0,0,0)),target="X1") # ==> ~ 0.8113
-# classificationEntropy(data.frame(X1=c(1,1,1,0)),target="X1") # ==> ~ 0.8113
-# 
-# # splitting dataset
-# splitNumVar(stupidData,"X1","X3") #  17.3333333
-# splitNumVar(qData,"V3","V4") # 0.31
-# splitNumVar(qData,"V2","V4") # 152.8
-# splitFacVar(fData,"V3","V4") # W
-# splitFacVar(fData,"V1","V4") # B
-# 
-# # Decision tree : quantitative variables, classification
-# createDecisionTreeModel(stupidData,"X3")
-# createDecisionTreeModel(qData,"V4")
-# 
-# qd = createDecisionTreeModel(qData,"V4")
-# result = as.vector(apply(qData,1,function(i){predictFromDecisionTree(qd,i)}))
-# 
-# errRate(result,qData$V4)
 
-# Cross validation
+# Cross validation IRIS ####
 
 # https://stats.stackexchange.com/questions/61090/how-to-split-a-data-set-to-do-10-fold-cross-validation Jake Drew code here
 data <- iris[sample(nrow(iris)),]
@@ -81,9 +35,10 @@ for (i in 1:10) {
 errorRF <- errorRF/10
 errorsimple <- errorsimple/10
 
-
+# Cross validation VisaPremier ####
+#Prétraitements
 library(readr)
-VisaPremier <- read.delim("D:/Bureau/DM/Advanced supervised learning/Projet/ASL-RF/VisaPremier.txt")
+VisaPremier <- read.delim("./VisaPremier.txt")
 VisaPremier <- VisaPremier[,-1]
 VisaPremier <- VisaPremier[,-which(colnames(VisaPremier) == "sexer")]
 VisaPremier <- VisaPremier[,-which(colnames(VisaPremier) == "cartevpr")]
@@ -114,6 +69,10 @@ VisaPremier$cartevp
 cible = "cartevp"
 
 table(VisaPremier$cartevp)
+rm(numVisaPremier)
+rm(zero)
+
+#######Fin prétraitements
 
 data <- VisaPremier[sample(nrow(VisaPremier)),]
 #Create 10 equally size folds
@@ -122,12 +81,19 @@ folds <- cut(seq(1,nrow(data)),breaks=10,labels = FALSE)
 
 testIndexes <- which(folds == 1,arr.ind = TRUE)
 test <- data[testIndexes, ]
-train <- data[-testIndexes, ]
-#Random Forest
-forest <- bagging(data = train, target = cible,maxDepth = 4,numBootstrap = 10, tailleSubspace = 6,minLeafSize = 1)
-res <- vectorizedPredictFromForest(forest,test)
-errorRF <- 0
-errorRF <- errorRF + errRate(res,test$Species)
+
+#Simple Tree for early testing
+# simpleDT = createDecisionTreeModel(train,cible,maxDepth = 15,minLeafSize = 1)
+# # debug(predictFromDecisionTree)
+# resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
+# prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
+# error <- errRate(prediction,test$cartevp)
+
+#Simple Random Forest for early testing
+# forest <- bagging(data = train, target = cible,maxDepth = 4,numBootstrap = 10, tailleSubspace = 6,minLeafSize = 1)
+# res <- vectorizedPredictFromForest(forest,test)
+# errorRF <- 0
+# errorRF <- errorRF + errRate(res,test$cartevp)
 
 #Perform 10 fold cross validation
 errorRF <- 0
@@ -138,15 +104,15 @@ for (i in 1:10) {
   test <- data[testIndexes, ]
   train <- data[-testIndexes, ]
   #Random Forest
-  forest <- bagging(data = train, target = cible,maxDepth = 4,numBootstrap = 200, tailleSubspace = 4,minLeafSize = 1)
+  forest <- bagging(data = train, target = cible,maxDepth = 6,numBootstrap = 100, tailleSubspace = 6,minLeafSize = 1)
   res <- vectorizedPredictFromForest(forest,test)
-  errorRF <- errorRF + errRate(res,test$Species)
+  errorRF <- errorRF + errRate(res,test$cartevp)
   
   #Simple DT
-  simpleDT = createDecisionTreeModel(train,"Species",maxDepth = 4,minLeafSize = 1)
+  simpleDT = createDecisionTreeModel(train,cible,maxDepth = 15,minLeafSize = 1)
   resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
   prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
-  errorsimple <- errorsimple + errRate(prediction,test$Species)
+  errorsimple <- errorsimple + errRate(prediction,test$cartevp)
 }
 errorRF <- errorRF/10
 errorsimple <- errorsimple/10
@@ -178,13 +144,8 @@ errorsimple <- errorsimple/10
 #                                times = 5
 # )
 # print(comparaison)
-# #### Tools ####
-# errRate = function(pred,truth){
-#   c = table(pred,truth)
-#   return(1 - sum(diag(c))/sum(c))
-# }
-# 
-# # test sur iris
+
+# # Plots
 iris
 par(mfrow=c(2,1))
 plot(iris$Sepal.Length, iris$Sepal.Width, pch=21, bg=c("red","green3","blue")[unclass(iris$Species)], main = "Iris Data")

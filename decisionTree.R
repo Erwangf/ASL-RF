@@ -86,12 +86,15 @@ classificationEntropy <- function(data,target){
   n = length(targetCol)
   P = table(targetCol)
   nodeEntropy = 0
+  if(length(P) >= 1){
   for (l in 1:length(P)) {
     if(P[l]!=0){
       nodeEntropy = nodeEntropy - (P[l]/n)*log2(P[l]/n)
     }
   }
-  
+  }else{
+    return(c(0))
+  }
   return(as.vector(nodeEntropy))
 }
 simpleClassificationEntropy <- function(vector){
@@ -212,7 +215,8 @@ expandNode <- function(node,data,availableVars,config,tailleSubspace){
       newSplit$R = data[data[splitVar]>=splitPosition,]
     } else {
       splitMod = splitFacVar(data,splitVar,config$target,config$minLeafSize)
-      newSplit$cond = paste("==",splitMod)
+      # newSplit$cond = paste("==",splitMod)
+      newSplit$cond = paste("=='",splitMod,"'",sep = "")
       newSplit$L = data[data[splitVar] != splitMod,]
       newSplit$R = data[data[splitVar] == splitMod,]
     }
