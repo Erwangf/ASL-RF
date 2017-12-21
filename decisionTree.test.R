@@ -1,4 +1,5 @@
 source("./decisionTree.R")
+source("./RandomForest.R")
 
 #### Tools ####
 errRate = function(pred,truth){
@@ -71,5 +72,9 @@ dt = rpart(data = iris,formula = Species ~.)
 rpart.plot(dt)
 
 errRate(apply(predict(dt,iris),1,function(l){names(l[which.max(l)])}),iris$Species)
+
+
+# bagging
+
 
 
