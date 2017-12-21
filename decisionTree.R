@@ -82,7 +82,7 @@ predictFromDecisionTree <-function(decisionTreeModel, item){
 # Entropy of q classes
 # target : number (of the target column in data) or string
 classificationEntropy <- function(data,target){
-  targetCol = t(as.vector(data[target]))
+  targetCol = t(as.vector(data[,target]))
   n = length(targetCol)
   P = table(targetCol)
   nodeEntropy = 0
@@ -93,6 +93,7 @@ classificationEntropy <- function(data,target){
     }
   }
   }else{
+    print(data[1,target])
     return(c(0))
   }
   return(as.vector(nodeEntropy))
