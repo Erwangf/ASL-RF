@@ -47,7 +47,7 @@ createDecisionTreeModel <- function(data,target,
   
   
   
-  rootNode = expandNode(node=list(depth=0),
+  rootNode = expandNode(node = list(depth = 0),
                         data = data,
                         availableVars = availableVars , 
                         config = config,
@@ -68,7 +68,7 @@ predictFromDecisionTree <-function(decisionTreeModel, item){
     # application de la condition du noeud :
     cond = paste("item['",node$var,"']",node$cond,sep="")
     goToRight = eval(parse(text=cond))
-    print(paste("Depth : ",currentDepth,"condition =",cond," = ",goToRight))
+    # print(paste("Depth : ",currentDepth,"condition =",cond," = ",goToRight))
     if(goToRight){
       node = node$R
     } else {
@@ -94,13 +94,38 @@ classificationEntropy <- function(data,target){
   
   return(as.vector(nodeEntropy))
 }
-
+simpleClassificationEntropy <- function(vector){
+  n = length(vector)
+  P = table(vector)
+  nodeEntropy = 0
+  for (l in 1:length(P)) {
+    if(P[l]!=0){
+      nodeEntropy = nodeEntropy - (P[l]/n)*log2(P[l]/n)
+    }
+  }
+  
+  return(as.vector(nodeEntropy))
+}
 
 splitNumVar <- function(data,splitVariable,target,minLeafSize=1){
-  # for now, the split point is very naive, it's only the mean of the split variable
-  # To improve it, we could use the weighted mean between the class centers
-  splitPoint = mean(as.vector(t(data[splitVariable])))
-  
+  classVector <- data[,target][order(data[,splitVariable])]
+  inpurityMin <- Inf
+  indiceSep <- NULL
+  for (i in 1:(length(classVector) - 1)) {
+    if (classVector[i + 1] != classVector[i])
+    {
+      left = classVector[1:i]
+      right = classVector[i + 1:length(classVector)]
+      inpurity = (length(left) * simpleClassificationEntropy(left) + length(right) * simpleClassificationEntropy(right)) / nrow(iris)
+      if (inpurityMin > inpurity){
+        inpurityMin <- inpurity
+        indiceSep <- i
+      }
+    }
+  }
+
+  quantVector <- data[,splitVariable][order(data[,splitVariable])]
+  splitPoint <- (quantVector[indiceSep] + quantVector[indiceSep + 1] ) / 2
   return(splitPoint)
 }
 
@@ -118,9 +143,9 @@ splitFacVar <- function(data,splitVariable,target,minLeafSize=1){
   for(i in 1:length(modalities)) {
     modality = modalities[i]
     
-    left = data[data[splitVariable]!=modality,]
-    right = data[data[splitVariable]==modality,]
-    cond= paste("=='",modality,"'",sep="")
+    left = data[data[splitVariable] != modality,]
+    right = data[data[splitVariable] == modality,]
+    cond= paste("=='",modality,"'",sep = "")
     
     # calcul de l'impureté
     inpurity = ( nrow(left) * classificationEntropy(left,target) + nrow(right) * classificationEntropy(right,target) ) / nrow(data)
@@ -146,16 +171,16 @@ leafValue <- function(data,target,classes){
 }
 
 
-expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
-  print(paste("Depth = ",node$depth, "/",config$maxDepth))
+expandNode <- function(node,data,availableVars,config,tailleSubspace){
+  # print(paste("Depth = ",node$depth, "/",config$maxDepth))
   targetColumn = data[,config$target]
   # depth control
   if(node$depth>=config$maxDepth){
-    print("Maximal Depth reached")
+    # print("Maximal Depth reached")
     return(list(V=leafValue(data,config$target,config$targetClasses)))
   }
   
-  availableVars <- availableVarsDefault[sample(tailleSubspace)]
+  availableVarsRand <- availableVars[sample(tailleSubspace)]
 
   
   availableClasses = unique(targetColumn)
@@ -168,15 +193,15 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
   impurity = classificationEntropy(data,config$target)
   # impurity threshold
   if(impurity<config$impurityThreshold){
-    print(paste("Current Entropy = ",currentEntropy," => no expansion"))
+    # print(paste("Current Entropy = ",currentEntropy," => no expansion"))
     return(list(V=leafValue(data,config$target,config$targetClasses)))
   }
   
   split = NULL
   varIndex = 0
-  while(varIndex<length(availableVars)){
+  while(varIndex<length(availableVarsRand)){
     varIndex = varIndex + 1
-    splitVar = availableVars[varIndex]
+    splitVar = availableVarsRand[varIndex]
     newSplit = list(var=splitVar)
     
     varType = class(as.vector(t(data[splitVar]))[1])
@@ -198,14 +223,14 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
     
     if(nL != 0 && nR != 0){ 
       
-      print(splitVar)
-      print(paste("nL = ",nL, " nR = ",nR, " N = ", N))
+      # print(splitVar)
+      # print(paste("nL = ",nL, " nR = ",nR, " N = ", N))
       
       # total impurity
       impurityL = classificationEntropy(newSplit$L,config$target)
       impurityR = classificationEntropy(newSplit$R,config$target)
       newImpurity = (nL/N) * impurityL + (nR/N) * impurityR
-      print(newImpurity)
+      # print(newImpurity)
       if(newImpurity<impurity && nL>=config$minLeafSize && nR >= config$minLeafSize ){
         split = newSplit
         impurity = newImpurity
@@ -216,8 +241,8 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
   if(!is.null(split)){
     node$cond = split$cond
     node$var = split$var
-    node$L = expandNode(list(depth=node$depth+1),data=split$L,availableVarsDefault,config=config,tailleSubspace)
-    node$R = expandNode(list(depth=node$depth+1),data=split$R,availableVarsDefault,config=config,tailleSubspace)
+    node$L = expandNode(list(depth=node$depth+1),data=split$L,availableVars,config=config,tailleSubspace)
+    node$R = expandNode(list(depth=node$depth+1),data=split$R,availableVars,config=config,tailleSubspace)
     return(node)
   } else {
     
