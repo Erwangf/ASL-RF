@@ -68,5 +68,4 @@ library(rpart)
 library(rpart.plot)
 dt = rpart(data = iris,formula = Species ~.)
 rpart.plot(dt)
-
 errRate(apply(predict(dt,iris),1,function(l){names(l[which.max(l)])}),iris$Species)

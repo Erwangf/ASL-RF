@@ -3,8 +3,9 @@
 # Date : 18/12 
 source("decisionTree.R")
 
+
 bagging <- function(data,target,input,numBootstrap = 100, tailleSubspace = floor(sqrt(ncol(data))), impurityMethod="entropy",maxDepth=300, minLeafSize = 1, impurityThreshold = 0.2){
-  
+
   predictions <- rep(0,numBootstrap)
   for (i in 1:numBootstrap) {
     
@@ -15,6 +16,7 @@ bagging <- function(data,target,input,numBootstrap = 100, tailleSubspace = floor
     predictions[i] <- predictFromDecisionTree(tempTree,input)
     
   }
+
   
   votesMajoritaires <- which.max(table(predictions))
   # Il peut y avoir des ex-aequo, on renvoit donc une liste
