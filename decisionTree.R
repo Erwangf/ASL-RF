@@ -68,7 +68,7 @@ predictFromDecisionTree <-function(decisionTreeModel, item){
     # application de la condition du noeud :
     cond = paste("item['",node$var,"']",node$cond,sep="")
     goToRight = eval(parse(text=cond))
-    print(paste("Depth : ",currentDepth,"condition =",cond," = ",goToRight))
+    # print(paste("Depth : ",currentDepth,"condition =",cond," = ",goToRight))
     if(goToRight){
       node = node$R
     } else {
@@ -172,11 +172,11 @@ leafValue <- function(data,target,classes){
 
 
 expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
-  print(paste("Depth = ",node$depth, "/",config$maxDepth))
+  # print(paste("Depth = ",node$depth, "/",config$maxDepth))
   targetColumn = data[,config$target]
   # depth control
   if(node$depth>=config$maxDepth){
-    print("Maximal Depth reached")
+    # print("Maximal Depth reached")
     return(list(V=leafValue(data,config$target,config$targetClasses)))
   }
   
@@ -193,7 +193,7 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
   impurity = classificationEntropy(data,config$target)
   # impurity threshold
   if(impurity<config$impurityThreshold){
-    print(paste("Current Entropy = ",currentEntropy," => no expansion"))
+    # print(paste("Current Entropy = ",currentEntropy," => no expansion"))
     return(list(V=leafValue(data,config$target,config$targetClasses)))
   }
   
@@ -223,14 +223,14 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
     
     if(nL != 0 && nR != 0){ 
       
-      print(splitVar)
-      print(paste("nL = ",nL, " nR = ",nR, " N = ", N))
+      # print(splitVar)
+      # print(paste("nL = ",nL, " nR = ",nR, " N = ", N))
       
       # total impurity
       impurityL = classificationEntropy(newSplit$L,config$target)
       impurityR = classificationEntropy(newSplit$R,config$target)
       newImpurity = (nL/N) * impurityL + (nR/N) * impurityR
-      print(newImpurity)
+      # print(newImpurity)
       if(newImpurity<impurity && nL>=config$minLeafSize && nR >= config$minLeafSize ){
         split = newSplit
         impurity = newImpurity

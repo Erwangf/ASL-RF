@@ -54,7 +54,23 @@
 
 # Choux
 source("./decisionTree.R")
-source("./RandomForest.R")
+source("./RandomForest2.R")
+
+a <- bagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 100, tailleSubspace = 4)
+a <- parallelBagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 100, tailleSubspace = 4)
+
+Rprof()
+invisible(parallelBagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 100, tailleSubspace = 4))
+Rprof(NULL)
+summaryRprof()
+
+library(randomForest)
+comparaison <- microbenchmark::microbenchmark(bagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 200),
+                               parallelBagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 200),
+                               rf1 <- randomForest(Species ~ ., iris, ntree=200, norm.votes=FALSE),
+                               times = 5
+)
+print(comparaison)
 #### Tools ####
 errRate = function(pred,truth){
   c = table(pred,truth)
