@@ -54,7 +54,7 @@
 
 # Choux
 source("./decisionTree.R")
-
+source("./RandomForest.R")
 #### Tools ####
 errRate = function(pred,truth){
   c = table(pred,truth)
@@ -68,6 +68,10 @@ irisDT = createDecisionTreeModel(iris,"Species",impurityThreshold = 0.1,maxDepth
 resultIris = t(apply(iris,1,function(i){predictFromDecisionTree(irisDT,i)}))
 prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
 errRate(prediction,iris$Species)
+
+
+
+bagging(data = iris, target = "Species",input = iris[50,])
 
 # comparing with rpart
 # library(rpart)

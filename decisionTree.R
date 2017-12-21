@@ -95,7 +95,7 @@ classificationEntropy <- function(data,target){
   return(as.vector(nodeEntropy))
 }
 simpleClassificationEntropy <- function(vector){
-  n = length(targetCol)
+  n = length(vector)
   P = table(vector)
   nodeEntropy = 0
   for (l in 1:length(P)) {
