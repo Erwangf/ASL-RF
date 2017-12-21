@@ -94,13 +94,38 @@ classificationEntropy <- function(data,target){
   
   return(as.vector(nodeEntropy))
 }
-
+simpleClassificationEntropy <- function(vector){
+  n = length(targetCol)
+  P = table(vector)
+  nodeEntropy = 0
+  for (l in 1:length(P)) {
+    if(P[l]!=0){
+      nodeEntropy = nodeEntropy - (P[l]/n)*log2(P[l]/n)
+    }
+  }
+  
+  return(as.vector(nodeEntropy))
+}
 
 splitNumVar <- function(data,splitVariable,target,minLeafSize=1){
-  # for now, the split point is very naive, it's only the mean of the split variable
-  # To improve it, we could use the weighted mean between the class centers
-  splitPoint = mean(as.vector(t(data[splitVariable])))
-  
+  classVector <- data[,target][order(data[,splitVariable])]
+  inpurityMin <- Inf
+  indiceSep <- NULL
+  for (i in 1:(length(classVector) - 1)) {
+    if (classVector[i + 1] != classVector[i])
+    {
+      left = classVector[1:i]
+      right = classVector[i + 1:length(classVector)]
+      inpurity = (length(left) * simpleClassificationEntropy(left) + length(right) * simpleClassificationEntropy(right)) / nrow(iris)
+      if (inpurityMin > inpurity){
+        inpurityMin <- inpurity
+        indiceSep <- i
+      }
+    }
+  }
+
+  quantVector <- data[,splitVariable][order(data[,splitVariable])]
+  splitPoint <- (quantVector[indiceSep] + quantVector[indiceSep + 1] ) / 2
   return(splitPoint)
 }
 
@@ -118,9 +143,9 @@ splitFacVar <- function(data,splitVariable,target,minLeafSize=1){
   for(i in 1:length(modalities)) {
     modality = modalities[i]
     
-    left = data[data[splitVariable]!=modality,]
-    right = data[data[splitVariable]==modality,]
-    cond= paste("=='",modality,"'",sep="")
+    left = data[data[splitVariable] != modality,]
+    right = data[data[splitVariable] == modality,]
+    cond= paste("=='",modality,"'",sep = "")
     
     # calcul de l'impureté
     inpurity = ( nrow(left) * classificationEntropy(left,target) + nrow(right) * classificationEntropy(right,target) ) / nrow(data)
