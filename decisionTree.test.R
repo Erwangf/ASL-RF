@@ -1,10 +1,11 @@
-# source("./decisionTree.R")
+source("./decisionTree.R")
+source("./RandomForest2.R")
 # 
 # #### Tools ####
-# errRate = function(pred,truth){
-#   c = table(pred,truth)
-#   return(1 - sum(diag(c))/sum(c))
-# }
+errRate = function(pred,truth){
+  c = table(pred,truth)
+  return(1 - sum(diag(c))/sum(c))
+}
 # 
 # 
 # #### Tests ####
@@ -52,42 +53,78 @@
 # 
 # errRate(result,qData$V4)
 
-# Choux
-source("./decisionTree.R")
-source("./RandomForest2.R")
+# Cross validation
 
-a <- bagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 100, tailleSubspace = 4)
-a <- parallelBagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 100, tailleSubspace = 4)
-
-Rprof()
-invisible(parallelBagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 100, tailleSubspace = 4))
-Rprof(NULL)
-summaryRprof()
-
-library(randomForest)
-comparaison <- microbenchmark::microbenchmark(bagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 200),
-                               parallelBagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 200),
-                               rf1 <- randomForest(Species ~ ., iris, ntree=200, norm.votes=FALSE),
-                               times = 5
-)
-print(comparaison)
-#### Tools ####
-errRate = function(pred,truth){
-  c = table(pred,truth)
-  return(1 - sum(diag(c))/sum(c))
+# https://stats.stackexchange.com/questions/61090/how-to-split-a-data-set-to-do-10-fold-cross-validation Jake Drew code here
+data <- iris[sample(nrow(iris)),]
+#Create 10 equally size folds
+folds <- cut(seq(1,nrow(data)),breaks=10,labels = FALSE)
+#Perform 10 fold cross validation
+errorRF <- 0
+errorsimple <- 0
+for (i in 1:10) {
+  #Segement your data by fold using the which() function 
+  testIndexes <- which(folds == i,arr.ind = TRUE)
+  test <- data[testIndexes, ]
+  train <- data[-testIndexes, ]
+  #Random Forest
+  forest <- bagging(data = train, target = "Species",maxDepth = 4,numBootstrap = 200, tailleSubspace = 3)
+  res <- vectorizedPredictFromForest(forest,test)
+  errorRF <- errorRF + errRate(res,test$Species)
+  
+  #Simple DT
+  simpleDT = createDecisionTreeModel(train,"Species",maxDepth = 4,minLeafSize = 1)
+  resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
+  prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
+  errorsimple <- errorsimple + errRate(prediction,test$Species)
 }
+errorRF <- errorRF/10
+errorsimple <- errorsimple/10
+# 
+# forest <- bagging(data = iris[idtrain,], target = "Species",numBootstrap = 200, tailleSubspace = 3)
+# test <- iris[-idtrain,]
+# res <- vectorizedPredictFromForest(forest,test)
+# errRate(res,test$Species)
+# 
+# # test sur iris
+# simpleDT = createDecisionTreeModel(iris[idtrain,],"Species",maxDepth = 4,minLeafSize = 1)
+# resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
+# prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
+# errRate(prediction,test$Species)
 
-# test sur iris
+
+
+# a <- parallelBagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 100, tailleSubspace = 4)
+# 
+# Rprof()
+# invisible(parallelBagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 100, tailleSubspace = 4))
+# Rprof(NULL)
+# summaryRprof()
+# 
+# library(randomForest)
+# comparaison <- microbenchmark::microbenchmark(bagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 200),
+#                                parallelBagging(data = iris, target = "Species",input = iris[50,],numBootstrap = 200),
+#                                rf1 <- randomForest(Species ~ ., iris, ntree=200, norm.votes=FALSE),
+#                                times = 5
+# )
+# print(comparaison)
+# #### Tools ####
+# errRate = function(pred,truth){
+#   c = table(pred,truth)
+#   return(1 - sum(diag(c))/sum(c))
+# }
+# 
+# # test sur iris
+iris
+par(mfrow=c(2,1))
+plot(iris$Sepal.Length, iris$Sepal.Width, pch=21, bg=c("red","green3","blue")[unclass(iris$Species)], main = "Iris Data")
 plot(iris$Petal.Length, iris$Petal.Width, pch=21, bg=c("red","green3","blue")[unclass(iris$Species)], main = "Iris Data")
+# 
+# irisDT = createDecisionTreeModel(iris,"Species",impurityThreshold = 0.1,maxDepth = 2,minLeafSize = 5)
+# resultIris = t(apply(iris,1,function(i){predictFromDecisionTree(irisDT,i)}))
+# prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
+# errRate(prediction,iris$Species)
 
-irisDT = createDecisionTreeModel(iris,"Species",impurityThreshold = 0.1,maxDepth = 2,minLeafSize = 5)
-resultIris = t(apply(iris,1,function(i){predictFromDecisionTree(irisDT,i)}))
-prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
-errRate(prediction,iris$Species)
-
-
-
-bagging(data = iris, target = "Species",input = iris[50,])
 
 # comparing with rpart
 # library(rpart)

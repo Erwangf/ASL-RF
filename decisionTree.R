@@ -47,7 +47,7 @@ createDecisionTreeModel <- function(data,target,
   
   
   
-  rootNode = expandNode(node=list(depth=0),
+  rootNode = expandNode(node = list(depth = 0),
                         data = data,
                         availableVars = availableVars , 
                         config = config,
@@ -171,7 +171,7 @@ leafValue <- function(data,target,classes){
 }
 
 
-expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
+expandNode <- function(node,data,availableVars,config,tailleSubspace){
   # print(paste("Depth = ",node$depth, "/",config$maxDepth))
   targetColumn = data[,config$target]
   # depth control
@@ -180,7 +180,7 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
     return(list(V=leafValue(data,config$target,config$targetClasses)))
   }
   
-  availableVars <- availableVarsDefault[sample(tailleSubspace)]
+  availableVarsRand <- availableVars[sample(tailleSubspace)]
 
   
   availableClasses = unique(targetColumn)
@@ -199,9 +199,9 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
   
   split = NULL
   varIndex = 0
-  while(varIndex<length(availableVars)){
+  while(varIndex<length(availableVarsRand)){
     varIndex = varIndex + 1
-    splitVar = availableVars[varIndex]
+    splitVar = availableVarsRand[varIndex]
     newSplit = list(var=splitVar)
     
     varType = class(as.vector(t(data[splitVar]))[1])
@@ -241,8 +241,8 @@ expandNode <- function(node,data,availableVarsDefault,config,tailleSubspace){
   if(!is.null(split)){
     node$cond = split$cond
     node$var = split$var
-    node$L = expandNode(list(depth=node$depth+1),data=split$L,availableVarsDefault,config=config,tailleSubspace)
-    node$R = expandNode(list(depth=node$depth+1),data=split$R,availableVarsDefault,config=config,tailleSubspace)
+    node$L = expandNode(list(depth=node$depth+1),data=split$L,availableVars,config=config,tailleSubspace)
+    node$R = expandNode(list(depth=node$depth+1),data=split$R,availableVars,config=config,tailleSubspace)
     return(node)
   } else {
     
