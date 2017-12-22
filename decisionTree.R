@@ -3,72 +3,57 @@
 # Date : 18/12 
 
 
-# exemple de retour : TRUE if 
-# var "X1" >= 18 
-# or 
-# var"X1" <18 et var X2>2
-# pour l'instant, param?tre inutilis?s
-createStupidTreeModel <- function(data,target,
-                                  impurityMethod="entropy",
-                                  maxDepth=300,
-                                  minLeafSize = 1,
-                                  impurityThreshold=0.2){
-  
-  
-  a = list(cond = ">=18", var = "X1",
-           L = list(cond = ">2", var = "X2",
-                    L = list(V = FALSE),
-                    R = list(V = TRUE)), 
-           R = list(V = TRUE))
-  return(a)
-}
 
-#Fonction générale
-#Input : data :dataframe (todo test dataframe)
-# target variable cible
-# impurityMethod="entropy" then gini and third??
-# maxDepth : profondeur max
-# minLeafSize : taille d'une feuille minimum (conditon d'arret)
-# impurityThreshold : valeur d'impuret? minimum
+# Crée un arbre de décision pour la classification
+# Input : 
+#     data : dataframe
+#     target : variable cible
+#     maxDepth : profondeur maximale (défaut : 30)
+#     minLeafSize : taille minimale d'une feuille (défaut : 5)
+#     impurityThreshold : impureté maximale d'une feuille (défaut : 0.1)
+#     tailleSubspace : nombre de variables à utiliser (défaut : nombre de variables disponibles -1)
 createDecisionTreeModel <- function(data,target,
-                                    impurityMethod="entropy",
-                                    maxDepth=300,
-                                    minLeafSize = 1,
-                                    impurityThreshold=0.2, tailleSubspace = (ncol(data)-1)){
+                                    maxDepth=30,
+                                    minLeafSize = 5,
+                                    impurityThreshold=0.1, 
+                                    tailleSubspace = (ncol(data)-1)){
   variables <- names(data)
   availableVars <- variables[variables != target]
   targetClasses <- as.vector(t(unique(data[target])))
   config = list(maxDepth=maxDepth,
                 minLeafSize=minLeafSize,
-                impurityThreshold = impurityThreshold, 
-                impurityMethod = impurityMethod, 
+                impurityThreshold = impurityThreshold,
                 target=target,
                 targetClasses = targetClasses)
   
   
-  
+  # Un arbre de décision est constitué d'un noeud racine, menant à d'autres noeuds
   rootNode = expandNode(node = list(depth = 0),
                         data = data,
                         availableVars = availableVars , 
                         config = config,
                         tailleSubspace)
   return(rootNode)
-  
 }
 
-
-predictViaDT <-function(decisionTreeModel, item){
+# A partir d'un arbre de donnée, donne les probabilités par classes estimées pour un item 
+# Input :
+#     decisionTreeModel : un arbre de décision
+#     item : dataframe d'une ligne
+predictViaDT <- function(decisionTreeModel, item){
   node = decisionTreeModel
-  currentDepth = 0
+  
+  # parcours de l'arbre de décision
   while(TRUE){
+    # si le noeud n'a pas de feuilles, on retourne sa valeur V
     if(is.null(node$L) && is.null(node$R)){
       return(node$V)
     }
-    currentDepth = currentDepth + 1
+    
     # application de la condition du noeud :
     cond = paste("item['",node$var,"']",node$cond,sep="")
     goToRight = eval(parse(text=cond))
-    # print(paste("Depth : ",currentDepth,"condition =",cond," = ",goToRight))
+    
     if(goToRight){
       node = node$R
     } else {
@@ -79,8 +64,7 @@ predictViaDT <-function(decisionTreeModel, item){
 
 #### Tools functions ####
 
-# Entropy of q classes
-# target : number (of the target column in data) or string
+# Calcul de l'entropie d'une source de données
 classificationEntropy <- function(data,target){
   if(nrow(data) == 0) return(0)
   targetCol = t(as.vector(data[,target]))
@@ -88,11 +72,15 @@ classificationEntropy <- function(data,target){
   P = table(targetCol)
   nodeEntropy = 0
   for (l in 1:length(P)) {
+    if(P[l]!=0){
       nodeEntropy = nodeEntropy - (P[l]/n)*log2(P[l]/n)
+    }
   }
   
   return(as.vector(nodeEntropy))
 }
+
+# Même fonction, mais plus simple
 simpleClassificationEntropy <- function(vector){
   n = length(vector)
   P = table(vector)
@@ -106,6 +94,7 @@ simpleClassificationEntropy <- function(vector){
   return(as.vector(nodeEntropy))
 }
 
+# Détermine le critère de séparation d'une variable quantitative
 splitNumVar <- function(data,splitVariable,target,minLeafSize=1){
   classVector <- data[,target][order(data[,splitVariable])]
   inpurityMin <- Inf
@@ -128,6 +117,7 @@ splitNumVar <- function(data,splitVariable,target,minLeafSize=1){
   return(splitPoint)
 }
 
+# Détermination du critère de séparation d'une variable qualitative
 splitFacVar <- function(data,splitVariable,target,minLeafSize=1){
   
   modalities = as.vector(t(unique(data[splitVariable])))
@@ -159,17 +149,15 @@ splitFacVar <- function(data,splitVariable,target,minLeafSize=1){
   return(modalities[modIndex])
 }
 
+# calcule la probabilité de chaque classe pour la feuille actuelle
 leafValue <- function(data,target,classes){
-  # currently, if use a (not always efficient) custom table + names
-  # res <- names(which.max(table(data[target])))
-  # return(res)
-  
   proba = sapply(classes,function(e){mean(data[target]==e)})
-  
   return(proba)
 }
 
-
+# fonction récursive, prenant en entrée un noeud et un jeu de données,
+# séparant ce jeu de donnée en 2, et ajoutantlui ajoutant 2 fils.
+# 
 expandNode <- function(node,data,availableVars,config,tailleSubspace){
   # print(paste("Depth = ",node$depth, "/",config$maxDepth))
   targetColumn = data[,config$target]

@@ -44,9 +44,6 @@ fData = data.frame(V1 = c("A","A","B","B","C","D","E"),
 # config
 qConfig = createConfig(qData,"V4",impurityMethod = "entropy",maxDepth = 3,minLeafSize=2,impurityThreshold=0.1)
 
-# model creation
-stupidModel = createStupidTreeModel(stupidData)
-apply(stupidData,1, function(row){predictViaDT(stupidModel,row)}) # ==> FALSE TRUE TRUE
 
 # classification entropy
 classificationEntropy(data.frame(X1 = c(1,1,0,0)),target = "X1") # ==> 1
