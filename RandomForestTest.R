@@ -1,6 +1,6 @@
 setwd("D:/Bureau/DM/Advanced supervised learning/Projet/ASL-RF")
 source("./decisionTree.R")
-source("./RandomForest2.R")
+source("./RandomForest.R")
 # 
 # #### Tools ####
 errRate = function(pred,truth){
@@ -8,9 +8,23 @@ errRate = function(pred,truth){
   return(1 - sum(diag(c))/sum(c))
 }
 
+# Early testing ####
+trainIndexes <- sample(1:nrow(iris),floor(0.7 * nrow(iris)))
+
+test <- iris[-trainIndexes, ]
+train <- iris[trainIndexes, ]
+
+# Simple RandomForest
+forest <- RandomForest(data = train, target = "Species",maxDepth = 4,numBootstrap = 200, tailleSubspace = 4,minLeafSize = 1)
+
+# Parallel RandomForest
+# forest <- parallelRandomForest(data = train, target = "Species",maxDepth = 4,numBootstrap = 200, tailleSubspace = 4,minLeafSize = 1)
+
+res <- vectorizedPredictFromForest(forest,test)
+error <- errRate(res,test$Species)
+
 # Cross validation IRIS ####
-# 
-# # https://stats.stackexchange.com/questions/61090/how-to-split-a-data-set-to-do-10-fold-cross-validation Jake Drew code here
+# # https://stats.stackexchange.com/questions/61090/how-to-split-a-data-set-to-do-10-fold-cross-validation Jake Drew code here for kFOld testing
 # data <- iris[sample(nrow(iris)),]
 # #Create 10 equally size folds
 # folds <- cut(seq(1,nrow(data)),breaks=10,labels = FALSE)
