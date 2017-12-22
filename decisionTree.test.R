@@ -60,9 +60,15 @@ plot(iris$Petal.Length, iris$Petal.Width, pch=21, bg=c("red","green3","blue")[un
 
 irisDT = createDecisionTreeModel(iris,"Species",impurityThreshold = 0.1,maxDepth = 2,minLeafSize = 5)
 resultIris = t(apply(iris,1,function(i){predictFromDecisionTree(irisDT,i)}))
-prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
-errRate(prediction,iris$Species)
+predictionIris = apply(resultIris,1,function(l){names(l[which.max(l)])})
+errRate(predictionIris,iris$Species)
 
+# test sur des données qualitatives
+bankrupt <- read.csv("./Qualitative_Bankruptcy/Qualitative_Bankruptcy.data.txt",header = F,sep = ",")
+bankruptDT <- createDecisionTreeModel(bankrupt,"V7")
+resultBankrupt = t(apply(bankrupt,1,function(i){predictFromDecisionTree(bankruptDT,i)}))
+predictionBankrupt = apply(resultBankrupt,1,function(l){names(l[which.max(l)])})
+errRate(predictionBankrupt,bankrupt$V7)
 
 library(rpart)
 library(rpart.plot)
