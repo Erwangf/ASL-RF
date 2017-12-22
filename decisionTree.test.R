@@ -65,7 +65,7 @@ createDecisionTreeModel(qData,"V4")
 # #### Decision Tree tests ####
 
 # qData
-qd = createDecisionTreeModel(qData,"V4")
+qd = arbreGeneration(qData,"V4")
 resultQd = t(apply(qData,1,function(i){predictViaDT(qd,i)}))
 predictionQd = apply(resultQd,1,function(l){names(l[which.max(l)])})
 
@@ -77,13 +77,13 @@ par(mfrow = c(2,1))
 plot(iris$Sepal.Length, iris$Sepal.Width, pch = 21, bg = c("red","green3","blue")[unclass(iris$Species)], main = "Iris Data")
 plot(iris$Petal.Length, iris$Petal.Width, pch = 21, bg = c("red","green3","blue")[unclass(iris$Species)], main = "Iris Data")
 
-irisDT = createDecisionTreeModel(iris,"Species",impurityThreshold = 0.1,maxDepth = 2,minLeafSize = 5)
+irisDT = arbreGeneration(iris,"Species",impurityThreshold = 0.1,maxDepth = 2,minLeafSize = 5)
 predictionIris = applyDTonDataset(irisDT,iris)
 errRate(predictionIris,iris$Species)
 
 # test sur des données qualitatives
 bankrupt <- read.csv("./Qualitative_Bankruptcy/Qualitative_Bankruptcy.data.txt",header = F,sep = ",")
-bankruptDT <- createDecisionTreeModel(bankrupt,"V7")
+bankruptDT <- arbreGeneration(bankrupt,"V7")
 
 predictionBankrupt = applyDTonDataset(bankruptDT,bankrupt)
 errRate(predictionBankrupt,bankrupt$V7)

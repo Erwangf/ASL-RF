@@ -12,7 +12,7 @@
 #     minLeafSize : taille minimale d'une feuille (défaut : 5)
 #     impurityThreshold : impureté maximale d'une feuille (défaut : 0.1)
 #     tailleSubspace : nombre de variables à utiliser (défaut : nombre de variables disponibles -1)
-createDecisionTreeModel <- function(data,target,
+arbreGeneration <- function(data,target,
                                     maxDepth=30,
                                     minLeafSize = 5,
                                     impurityThreshold=0.1, 
