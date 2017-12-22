@@ -100,9 +100,9 @@ parallelRandomForest <- function(numCore = detectCores(), data,target,numBootstr
 # une liste des proportions de votes pour chaque classes (pour une catégorisation simple, on conserve le vote majoritaire)
 predictFromForest <- function(forest,input){
   
-  # Pour chaque arbre de la Forêt aléatoire, on va executer la fonciton predictFromDecisionTree
+  # Pour chaque arbre de la Forêt aléatoire, on va executer la fonction predictViaDT
   predictions <-  Reduce("c",lapply(forest,function(t) {
-    l <- predictFromDecisionTree(t, input)
+    l <- predictViaDT(t, input)
     return(names(l[which.max(l)])[1])
   }))
   

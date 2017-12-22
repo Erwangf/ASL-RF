@@ -98,18 +98,9 @@ testIndexes <- which(folds == 1,arr.ind = TRUE)
 test <- data[testIndexes, ]
 train <- data[-testIndexes, ]
 
-# bobi <- randomForest::randomForest(cartevp ~ .,train)
-# bo <- predict(bobi, test)
-# error <- errRate(bo,test$cartevp)
-#Simple Tree for early testing
-# simpleDT = arbreGeneration(train,cible,maxDepth = 15,minLeafSize = 1)
-# # debug(predictFromDecisionTree)
-# resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
-# prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
-# error <- errRate(prediction,test$cartevp)
 
 #Simple Random Forest for early testing
-forest <- andomForest(data = train, target = cible,maxDepth = 4,numBootstrap = 10, tailleSubspace = 6,minLeafSize = 1)
+forest <- RandomForest(data = train, target = cible,maxDepth = 4,numBootstrap = 10, tailleSubspace = 6,minLeafSize = 1)
 res <- vectorizedPredictFromForest(forest,test)
 errorRF <- 0
 errorRF <- errorRF + errRate(res,test$cartevp)
@@ -190,6 +181,5 @@ plot(iris$Petal.Length, iris$Petal.Width, pch=21, bg=c("red","green3","blue")[un
 # rpart.plot(dt)
 # 
 # errRate(apply(predict(dt,iris),1,function(l){names(l[which.max(l)])}),iris$Species)
-
 
 
