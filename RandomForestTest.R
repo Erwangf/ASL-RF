@@ -42,7 +42,7 @@ error <- errRate(res,test$Species)
 #   errorRF <- errorRF + errRate(res,test$Species)
 #   
 #   #Simple DT
-#   simpleDT = createDecisionTreeModel(train,"Species",maxDepth = 4,minLeafSize = 1)
+#   simpleDT = arbreGeneration(train,"Species",maxDepth = 4,minLeafSize = 1)
 #   resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
 #   prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
 #   errorsimple <- errorsimple + errRate(prediction,test$Species)
@@ -102,7 +102,7 @@ train <- data[-testIndexes, ]
 # bo <- predict(bobi, test)
 # error <- errRate(bo,test$cartevp)
 #Simple Tree for early testing
-# simpleDT = createDecisionTreeModel(train,cible,maxDepth = 15,minLeafSize = 1)
+# simpleDT = arbreGeneration(train,cible,maxDepth = 15,minLeafSize = 1)
 # # debug(predictFromDecisionTree)
 # resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
 # prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
@@ -130,7 +130,7 @@ for (i in 1:10) {
   # errorRF <- errorRF + errRate(res,test$cartevp)
   # 
   # #Simple DT
-  # simpleDT = createDecisionTreeModel(train,cible,maxDepth = 15,minLeafSize = 1)
+  # simpleDT = arbreGeneration(train,cible,maxDepth = 15,minLeafSize = 1)
   # resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
   # prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
   # errorsimple <- errorsimple + errRate(prediction,test$cartevp)
@@ -149,7 +149,7 @@ summary(data)
 # errRate(res,test$Species)
 # 
 # # test sur iris
-# simpleDT = createDecisionTreeModel(iris[idtrain,],"Species",maxDepth = 4,minLeafSize = 1)
+# simpleDT = arbreGeneration(iris[idtrain,],"Species",maxDepth = 4,minLeafSize = 1)
 # resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
 # prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
 # errRate(prediction,test$Species)
@@ -177,7 +177,7 @@ par(mfrow=c(2,1))
 plot(iris$Sepal.Length, iris$Sepal.Width, pch=21, bg=c("red","green3","blue")[unclass(iris$Species)], main = "Iris Data")
 plot(iris$Petal.Length, iris$Petal.Width, pch=21, bg=c("red","green3","blue")[unclass(iris$Species)], main = "Iris Data")
 # 
-# irisDT = createDecisionTreeModel(iris,"Species",impurityThreshold = 0.1,maxDepth = 2,minLeafSize = 5)
+# irisDT = arbreGeneration(iris,"Species",impurityThreshold = 0.1,maxDepth = 2,minLeafSize = 5)
 # resultIris = t(apply(iris,1,function(i){predictFromDecisionTree(irisDT,i)}))
 # prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
 # errRate(prediction,iris$Species)
