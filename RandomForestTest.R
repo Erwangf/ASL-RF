@@ -1,6 +1,6 @@
 setwd("D:/Bureau/DM/Advanced supervised learning/Projet/ASL-RF")
 source("./decisionTree.R")
-source("./RandomForest2.R")
+source("./RandomForest.R")
 # 
 # #### Tools ####
 errRate = function(pred,truth){
@@ -8,9 +8,23 @@ errRate = function(pred,truth){
   return(1 - sum(diag(c))/sum(c))
 }
 
+# Early testing ####
+trainIndexes <- sample(1:nrow(iris),floor(0.7 * nrow(iris)))
+
+test <- iris[-trainIndexes, ]
+train <- iris[trainIndexes, ]
+
+# Simple RandomForest
+forest <- RandomForest(data = train, target = "Species",maxDepth = 4,numBootstrap = 200, tailleSubspace = 4,minLeafSize = 1)
+
+# Parallel RandomForest
+# forest <- parallelRandomForest(data = train, target = "Species",maxDepth = 4,numBootstrap = 200, tailleSubspace = 4,minLeafSize = 1)
+
+res <- vectorizedPredictFromForest(forest,test)
+error <- errRate(res,test$Species)
+
 # Cross validation IRIS ####
-# 
-# # https://stats.stackexchange.com/questions/61090/how-to-split-a-data-set-to-do-10-fold-cross-validation Jake Drew code here
+# # https://stats.stackexchange.com/questions/61090/how-to-split-a-data-set-to-do-10-fold-cross-validation Jake Drew code here for kFOld testing
 # data <- iris[sample(nrow(iris)),]
 # #Create 10 equally size folds
 # folds <- cut(seq(1,nrow(data)),breaks=10,labels = FALSE)
@@ -28,7 +42,7 @@ errRate = function(pred,truth){
 #   errorRF <- errorRF + errRate(res,test$Species)
 #   
 #   #Simple DT
-#   simpleDT = createDecisionTreeModel(train,"Species",maxDepth = 4,minLeafSize = 1)
+#   simpleDT = arbreGeneration(train,"Species",maxDepth = 4,minLeafSize = 1)
 #   resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
 #   prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
 #   errorsimple <- errorsimple + errRate(prediction,test$Species)
@@ -88,7 +102,7 @@ train <- data[-testIndexes, ]
 # bo <- predict(bobi, test)
 # error <- errRate(bo,test$cartevp)
 #Simple Tree for early testing
-# simpleDT = createDecisionTreeModel(train,cible,maxDepth = 15,minLeafSize = 1)
+# simpleDT = arbreGeneration(train,cible,maxDepth = 15,minLeafSize = 1)
 # # debug(predictFromDecisionTree)
 # resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
 # prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
@@ -116,7 +130,7 @@ for (i in 1:10) {
   # errorRF <- errorRF + errRate(res,test$cartevp)
   # 
   # #Simple DT
-  # simpleDT = createDecisionTreeModel(train,cible,maxDepth = 15,minLeafSize = 1)
+  # simpleDT = arbreGeneration(train,cible,maxDepth = 15,minLeafSize = 1)
   # resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
   # prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
   # errorsimple <- errorsimple + errRate(prediction,test$cartevp)
@@ -135,7 +149,7 @@ summary(data)
 # errRate(res,test$Species)
 # 
 # # test sur iris
-# simpleDT = createDecisionTreeModel(iris[idtrain,],"Species",maxDepth = 4,minLeafSize = 1)
+# simpleDT = arbreGeneration(iris[idtrain,],"Species",maxDepth = 4,minLeafSize = 1)
 # resultIris = t(apply(test,1,function(i){predictFromDecisionTree(simpleDT,i)}))
 # prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
 # errRate(prediction,test$Species)
@@ -163,7 +177,7 @@ par(mfrow=c(2,1))
 plot(iris$Sepal.Length, iris$Sepal.Width, pch=21, bg=c("red","green3","blue")[unclass(iris$Species)], main = "Iris Data")
 plot(iris$Petal.Length, iris$Petal.Width, pch=21, bg=c("red","green3","blue")[unclass(iris$Species)], main = "Iris Data")
 # 
-# irisDT = createDecisionTreeModel(iris,"Species",impurityThreshold = 0.1,maxDepth = 2,minLeafSize = 5)
+# irisDT = arbreGeneration(iris,"Species",impurityThreshold = 0.1,maxDepth = 2,minLeafSize = 5)
 # resultIris = t(apply(iris,1,function(i){predictFromDecisionTree(irisDT,i)}))
 # prediction = apply(resultIris,1,function(l){names(l[which.max(l)])})
 # errRate(prediction,iris$Species)
