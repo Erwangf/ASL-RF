@@ -57,7 +57,7 @@ createDecisionTreeModel <- function(data,target,
 }
 
 
-predictFromDecisionTree <-function(decisionTreeModel, item){
+predictViaDT <-function(decisionTreeModel, item){
   node = decisionTreeModel
   currentDepth = 0
   while(TRUE){
