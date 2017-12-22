@@ -90,22 +90,20 @@ rm(zero)
 #######Fin prétraitements
 
 data <- VisaPremier[sample(nrow(VisaPremier)),]
+
+#Simple Random Forest for early testing
+trainIndexes <- sample(1:nrow(VisaPremier),floor(0.7 * nrow(VisaPremier)))
+
+test <- data[-trainIndexes, ]
+train <- data[trainIndexes, ]
+forest <- RandomForest(data = train, target = cible,maxDepth = 15,numBootstrap = 100, tailleSubspace = 6,minLeafSize = 1)
+res <- vectorizedPredictFromForest(forest,test)
+errorRF <- errRate(res,test$cartevp)
+
+
 #Create 10 equally size folds
 folds <- cut(seq(1,nrow(data)),breaks=10,labels = FALSE)
 
-
-testIndexes <- which(folds == 1,arr.ind = TRUE)
-test <- data[testIndexes, ]
-train <- data[-testIndexes, ]
-
-
-#Simple Random Forest for early testing
-forest <- RandomForest(data = train, target = cible,maxDepth = 4,numBootstrap = 10, tailleSubspace = 6,minLeafSize = 1)
-res <- vectorizedPredictFromForest(forest,test)
-errorRF <- 0
-errorRF <- errorRF + errRate(res,test$cartevp)
-
-train[,cible]
 #Perform 10 fold cross validation
 errorRF <- 0
 errorsimple <- 0
