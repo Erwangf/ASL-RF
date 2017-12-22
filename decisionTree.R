@@ -62,6 +62,14 @@ predictViaDT <- function(decisionTreeModel, item){
   }
 }
 
+# apply the predictViaDT function over a dataset, selecting for each line the
+# class with the highest class probability
+applyDTonDataset <- function(decisionTreeModel,dataset){
+  result = t(apply(dataset,1,function(i){predictViaDT(decisionTreeModel,i)}))
+  prediction = apply(result,1,function(l){names(l[which.max(l)])})
+  return(prediction)
+}
+
 #### Tools functions ####
 
 # Calcul de l'entropie d'une source de données
@@ -129,7 +137,7 @@ splitFacVar <- function(data,splitVariable,target,minLeafSize=1){
   modIndex = 1
   
   # trouver la meilleure modalité
-  for(i in 1:length(modalities)) {
+  for(i in 1:length(modalities)){
     modality = modalities[i]
     
     left = data[data[splitVariable] != modality,]
@@ -159,10 +167,9 @@ leafValue <- function(data,target,classes){
 # séparant ce jeu de donnée en 2, et ajoutantlui ajoutant 2 fils.
 # 
 expandNode <- function(node,data,availableVars,config,tailleSubspace){
-  # print(paste("Depth = ",node$depth, "/",config$maxDepth))
   targetColumn = data[,config$target]
   # depth control
-  if(node$depth>=config$maxDepth){
+  if(node$depth >= config$maxDepth){
     # print("Maximal Depth reached")
     return(list(V=leafValue(data,config$target,config$targetClasses)))
   }
@@ -226,7 +233,7 @@ expandNode <- function(node,data,availableVars,config,tailleSubspace){
      
     }
   }
-  if(!is.null(split)){
+  if(!is.null(split)) {
     node$cond = split$cond
     node$var = split$var
     node$L = expandNode(list(depth=node$depth+1),data=split$L,availableVars,config=config,tailleSubspace)

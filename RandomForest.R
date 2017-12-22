@@ -37,7 +37,7 @@ RandomForest <- function(data,target,numBootstrap = 100, tailleSubspace = floor(
     }
     
     #Création de l'arbre de décision.
-    tempTree = arbreGeneration(bootstrap,target,impurityThreshold,maxDepth,minLeafSize,tailleSubspace = tailleSubspace)
+    tempTree = arbreGeneration(bootstrap,target,maxDepth,minLeafSize,impurityThreshold,tailleSubspace = tailleSubspace)
     
     # On ajoute l'arbre à la liste de sortie
     trees <- list.append(trees,tempTree)
@@ -82,7 +82,7 @@ parallelRandomForest <- function(numCore = detectCores(), data,target,numBootstr
     for (i in sampleIDs[2:length(sampleIDs)]) {
       bootstrap[i,] <- data[sampleIDs[i],]
     }
-    tempTree = arbreGeneration(bootstrap,target,impurityThreshold,maxDepth,minLeafSize,tailleSubspace = tailleSubspace)
+    tempTree = arbreGeneration(bootstrap,target,maxDepth,minLeafSize,impurityThreshold,tailleSubspace = tailleSubspace)
     return(tempTree)
   })
   

@@ -16,13 +16,7 @@ errRate = function(pred,truth){
   return(1 - sum(diag(c))/sum(c))
 }
 
-# apply the predictViaDT function over a dataset, selecting for each line the
-# class with the highest class probability
-applyDTonDataset <- function(decisionTreeModel,dataset){
-  result = t(apply(dataset,1,function(i){predictViaDT(decisionTreeModel,i)}))
-  prediction = apply(result,1,function(l){names(l[which.max(l)])})
-  return(prediction)
-}
+
 
 
 #### General Tests ####

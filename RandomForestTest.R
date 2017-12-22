@@ -1,4 +1,4 @@
-setwd("D:/Bureau/DM/Advanced supervised learning/Projet/ASL-RF")
+
 source("./decisionTree.R")
 source("./RandomForest.R")
 # 
@@ -109,7 +109,7 @@ train <- data[-testIndexes, ]
 # error <- errRate(prediction,test$cartevp)
 
 #Simple Random Forest for early testing
-forest <- bagging(data = train, target = cible,maxDepth = 4,numBootstrap = 10, tailleSubspace = 6,minLeafSize = 1)
+forest <- andomForest(data = train, target = cible,maxDepth = 4,numBootstrap = 10, tailleSubspace = 6,minLeafSize = 1)
 res <- vectorizedPredictFromForest(forest,test)
 errorRF <- 0
 errorRF <- errorRF + errRate(res,test$cartevp)
@@ -190,5 +190,6 @@ plot(iris$Petal.Length, iris$Petal.Width, pch=21, bg=c("red","green3","blue")[un
 # rpart.plot(dt)
 # 
 # errRate(apply(predict(dt,iris),1,function(l){names(l[which.max(l)])}),iris$Species)
+
 
 
