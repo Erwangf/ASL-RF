@@ -39,7 +39,7 @@ errRate = function(pred,truth){
 # Cross validation VisaPremier ####
 #Prétraitements
 library(readr)
-VisaPremier <- read.delim("D:/Bureau/DM/Advanced supervised learning/Projet/ASL-RF/VisaPremier.txt")
+VisaPremier <- read.delim("./VisaPremier.txt")
 VisaPremier <- VisaPremier[,-1]
 VisaPremier <- VisaPremier[,-which(colnames(VisaPremier) == "sexer")]
 VisaPremier <- VisaPremier[,-which(colnames(VisaPremier) == "cartevpr")]

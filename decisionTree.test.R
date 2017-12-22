@@ -52,7 +52,7 @@ qd = createDecisionTreeModel(qData,"V4")
 result = as.vector(apply(qData,1,function(i){predictFromDecisionTree(qd,i)}))
 
 errRate(result,qData$V4)
-# # test sur iris
+# test sur iris
 iris
 par(mfrow=c(2,1))
 plot(iris$Sepal.Length, iris$Sepal.Width, pch=21, bg=c("red","green3","blue")[unclass(iris$Species)], main = "Iris Data")
